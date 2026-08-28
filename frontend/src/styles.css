@@ -410,6 +410,8 @@ h3 {
 .stack {
   display: grid;
   gap: 14px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .muted {
@@ -567,11 +569,15 @@ h3 {
 .field-grid {
   display: grid;
   gap: 12px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .field-grid label {
   display: grid;
   gap: 6px;
+  min-width: 0;
+  max-width: 100%;
   color: var(--color-text-muted);
   font-size: 0.92rem;
   font-weight: 700;
@@ -581,6 +587,8 @@ h3 {
 .field-grid textarea,
 .field-grid select {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   min-height: 44px;
   border: 1px solid var(--color-border);
   border-radius: 8px;
@@ -595,12 +603,15 @@ h3 {
 }
 
 .notice {
+  min-width: 0;
+  max-width: 100%;
   border: 1px solid rgb(3 105 161 / 0.2);
   border-radius: 8px;
   background: rgb(3 105 161 / 0.07);
   color: var(--color-accent-strong);
   padding: 12px;
   line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 .danger-note {
@@ -1210,9 +1221,13 @@ summary {
 }
 
 .transaction-state {
+  min-width: 0;
+  max-width: 100%;
   border-color: var(--line);
   background: rgb(255 255 255 / 0.58);
   color: var(--ink);
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 
 .transaction-state strong {
