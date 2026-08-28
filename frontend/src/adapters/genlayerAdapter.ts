@@ -16,7 +16,6 @@ import type {
 import { createBrowserWalletProvider, type Eip1193Provider } from "./wallet";
 
 export const GEN = 10n ** 18n;
-const genLayerEvmChainId = 4221;
 
 type ContractRead = Record<string, unknown>;
 
@@ -44,7 +43,7 @@ interface TraceSettleChainOptions {
 export function createTraceSettleChain(options: TraceSettleChainOptions) {
   return {
     ...chains.studionet,
-    id: genLayerEvmChainId,
+    id: chains.studionet.id,
     rpcUrls: {
       default: {
         http: [options.genlayerRpcUrl]

@@ -268,7 +268,7 @@ describe("wallet adapter", () => {
 
     expect(request).toHaveBeenCalledWith({
       method: "wallet_switchEthereumChain",
-      params: [{ chainId: "0x107d" }]
+      params: [{ chainId: "0xf22f" }]
     });
   });
 
@@ -284,7 +284,7 @@ describe("wallet adapter", () => {
       method: "wallet_addEthereumChain",
       params: [
         expect.objectContaining({
-          chainId: "0x107d",
+          chainId: "0xf22f",
           rpcUrls: ["https://rpc.testnet-chain.genlayer.com"]
         })
       ]
@@ -296,7 +296,7 @@ describe("wallet adapter", () => {
       .fn()
       .mockRejectedValueOnce(
         new Error(
-          'Unrecognized chain ID "0x107d". Try adding the chain using wallet_switchEthereumChain first.'
+          'Unrecognized chain ID "0xf22f". Try adding the chain using wallet_switchEthereumChain first.'
         )
       )
       .mockResolvedValueOnce(undefined);
@@ -307,7 +307,7 @@ describe("wallet adapter", () => {
       method: "wallet_addEthereumChain",
       params: [
         expect.objectContaining({
-          chainId: "0x107d",
+          chainId: "0xf22f",
           rpcUrls: ["https://rpc.testnet-chain.genlayer.com"]
         })
       ]

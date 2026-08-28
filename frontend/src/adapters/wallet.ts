@@ -1,8 +1,10 @@
+import { chains } from "genlayer-js";
+
 export interface Eip1193Provider {
   request(args: { method: string; params?: unknown[] | Record<string, unknown> }): Promise<unknown>;
 }
 
-const genLayerEvmChainId = "0x107d";
+const genLayerEvmChainId = `0x${chains.studionet.id.toString(16)}`;
 const fallbackGenLayerGasPrice = "0xb2d05e0";
 const minimumGenLayerGasPrice = BigInt(fallbackGenLayerGasPrice);
 
