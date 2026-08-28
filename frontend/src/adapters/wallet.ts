@@ -137,6 +137,10 @@ function needsGasPriceNormalization(value: unknown): boolean {
   return BigInt(value) < minimumGenLayerGasPrice;
 }
 
+function hasEip1559FeeFields(transaction: Record<string, unknown>): boolean {
+  return "maxFeePerGas" in transaction || "maxPriorityFeePerGas" in transaction;
+}
+
 async function currentGasPrice(provider: Eip1193Provider): Promise<`0x${string}`> {
   try {
     const gasPrice = await provider.request({ method: "eth_gasPrice" });
@@ -211,12 +215,26 @@ export function createBrowserWalletProvider(provider: Eip1193Provider): Eip1193P
       }
 
       const [transaction, ...rest] = args.params;
-      const normalizedTransaction = needsGasPriceNormalization(transaction.gasPrice)
-        ? {
-            ...transaction,
-            gasPrice: await currentGasPrice(provider)
-          }
-        : transaction;
+      let normalizedTransaction = transaction;
+      if (hasEip1559FeeFields(transaction)) {
+        if (
+          needsGasPriceNormalization(transaction.maxFeePerGas) ||
+          needsGasPriceNormalization(transaction.maxPriorityFeePerGas)
+        ) {
+          const gasPrice = await currentGasPrice(provider);
+          const { gasPrice: _legacyGasPrice, ...transactionWithoutLegacyGasPrice } = transaction;
+          normalizedTransaction = {
+            ...transactionWithoutLegacyGasPrice,
+            maxFeePerGas: gasPrice,
+            maxPriorityFeePerGas: gasPrice
+          };
+        }
+      } else if (needsGasPriceNormalization(transaction.gasPrice)) {
+        normalizedTransaction = {
+          ...transaction,
+          gasPrice: await currentGasPrice(provider)
+        };
+      }
       return requestWithGasRateRetry(provider, {
         ...args,
         params: [normalizedTransaction, ...rest]

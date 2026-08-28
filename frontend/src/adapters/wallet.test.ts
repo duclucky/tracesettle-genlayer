@@ -223,6 +223,46 @@ describe("wallet adapter", () => {
     ]);
   });
 
+  it("normalizes below-minimum EIP-1559 fee caps without adding legacy gas price", async () => {
+    const requests: Array<{ method: string; params?: unknown[] | Record<string, unknown> }> = [];
+    const provider = {
+      request: vi.fn(async (args: { method: string; params?: unknown[] | Record<string, unknown> }) => {
+        requests.push(args);
+        if (args.method === "eth_gasPrice") {
+          return "0xb2d05e0";
+        }
+        return "0xabc";
+      })
+    };
+    const compatibleProvider = createBrowserWalletProvider(provider);
+
+    await compatibleProvider.request({
+      method: "eth_sendTransaction",
+      params: [
+        {
+          from: "0x1111111111111111111111111111111111111111",
+          to: "0x2222222222222222222222222222222222222222",
+          gas: "0x7a120",
+          maxFeePerGas: "0x1",
+          maxPriorityFeePerGas: "0x1",
+          value: "0x0"
+        }
+      ]
+    });
+
+    expect(requests[1].params).toEqual([
+      expect.not.objectContaining({
+        gasPrice: expect.anything()
+      })
+    ]);
+    expect(requests[1].params).toEqual([
+      expect.objectContaining({
+        maxFeePerGas: "0xb2d05e0",
+        maxPriorityFeePerGas: "0xb2d05e0"
+      })
+    ]);
+  });
+
   it("retries transient GenLayer RPC gas-rate capacity errors once the wallet request is ready", async () => {
     const requests: Array<{ method: string; params?: unknown[] | Record<string, unknown> }> = [];
     const provider = {
