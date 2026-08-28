@@ -97,8 +97,6 @@ export function WalletStatus() {
   }, [disconnectSuppressed, environment, setWalletSession]);
 
   async function connectWallet() {
-    setDisconnectSuppressed(false);
-    writeDisconnectSuppression(false);
     const results = await discoverInjectedWallets(environment);
     setCandidates(results);
     if (results.length === 0) {
@@ -111,6 +109,8 @@ export function WalletStatus() {
 
   async function selectWallet(candidate: WalletCandidate) {
     try {
+      setDisconnectSuppressed(false);
+      writeDisconnectSuppression(false);
       const result = await connectInjectedWallet(candidate.provider);
       if (result.address) {
         setWalletSession({

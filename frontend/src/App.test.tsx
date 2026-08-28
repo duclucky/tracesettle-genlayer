@@ -337,6 +337,34 @@ describe("TraceSettle route map", () => {
     expect(screen.queryByRole("button", { name: "0xC495...8272" })).not.toBeInTheDocument();
   });
 
+  it("keeps wallet choice pending after disconnect until the user selects a provider", async () => {
+    const request = vi.fn(async ({ method }: { method: string }) => {
+      if (method === "eth_accounts" || method === "eth_requestAccounts") {
+        return ["0xC495ef51618D03267A1f227aFe5b27B38c748272"];
+      }
+      return undefined;
+    });
+    vi.stubGlobal("ethereum", { name: "Browser wallet", request });
+
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <AppRoutes />
+      </MemoryRouter>
+    );
+
+    await user.click(await screen.findByRole("button", { name: "0xC495...8272" }));
+    await user.click(screen.getByRole("button", { name: "Disconnect wallet" }));
+    await user.click(screen.getByRole("button", { name: "Connect wallet" }));
+
+    expect(await screen.findByRole("dialog", { name: "Connect wallet" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "0xC495...8272" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Browser wallet" }));
+
+    expect(await screen.findByRole("button", { name: "0xC495...8272" })).toBeInTheDocument();
+  });
+
   it("shows a plain provider rejection in the single wallet status", async () => {
     vi.stubGlobal("ethereum", {
       request: vi.fn().mockRejectedValue({
