@@ -5,7 +5,8 @@ function createClientStub() {
   return {
     readContract: vi.fn(),
     writeContract: vi.fn(),
-    waitForTransactionReceipt: vi.fn()
+    waitForTransactionReceipt: vi.fn(),
+    finalizeTransaction: vi.fn()
   };
 }
 
@@ -145,7 +146,9 @@ describe("GenLayer TraceSettle adapter", () => {
     );
     expect(client.waitForTransactionReceipt).toHaveBeenCalledWith({
       hash: "0xabc",
-      status: "FINALIZED"
+      interval: 7000,
+      retries: 30,
+      status: "ACCEPTED"
     });
   });
 
@@ -220,6 +223,39 @@ describe("GenLayer TraceSettle adapter", () => {
       submitted: true,
       finalized: false,
       message: "Transaction accepted; wait for finality before relying on state."
+    });
+  });
+
+  it("finalizes accepted transactions before waiting for canonical finalized state", async () => {
+    const client = createClientStub();
+    client.writeContract.mockResolvedValue("0xfinalize");
+    client.waitForTransactionReceipt
+      .mockResolvedValueOnce({ statusName: "ACCEPTED" })
+      .mockResolvedValueOnce({ statusName: "FINALIZED" });
+    const adapter = createGenLayerTraceSettleAdapter({
+      address: "0x1234567890123456789012345678901234567890",
+      account: "0x2222222222222222222222222222222222222222",
+      client
+    });
+
+    await expect(adapter.lockEvidence("trace-1")).resolves.toEqual({
+      id: "0xfinalize",
+      submitted: true,
+      finalized: true,
+      message: "Transaction finalized; reload canonical contract state."
+    });
+    expect(client.waitForTransactionReceipt).toHaveBeenNthCalledWith(1, {
+      hash: "0xfinalize",
+      status: "ACCEPTED",
+      interval: 7000,
+      retries: 30
+    });
+    expect(client.finalizeTransaction).toHaveBeenCalledWith({ txId: "0xfinalize" });
+    expect(client.waitForTransactionReceipt).toHaveBeenNthCalledWith(2, {
+      hash: "0xfinalize",
+      status: "FINALIZED",
+      interval: 7000,
+      retries: 24
     });
   });
 

@@ -24,6 +24,7 @@ interface GenLayerClientLike {
   readContract(args: Record<string, unknown>): Promise<unknown>;
   writeContract(args: Record<string, unknown>): Promise<`0x${string}` | string>;
   waitForTransactionReceipt(args: Record<string, unknown>): Promise<Record<string, unknown>>;
+  finalizeTransaction?(args: Record<string, unknown>): Promise<unknown>;
 }
 
 interface AdapterOptions {
@@ -155,11 +156,13 @@ async function waitForFinality(
   client: GenLayerClientLike,
   hash: `0x${string}` | string
 ): Promise<TransactionResult> {
-  let receipt: Record<string, unknown>;
+  let acceptedReceipt: Record<string, unknown>;
   try {
-    receipt = await client.waitForTransactionReceipt({
+    acceptedReceipt = await client.waitForTransactionReceipt({
       hash,
-      status: "FINALIZED"
+      status: "ACCEPTED",
+      interval: 7000,
+      retries: 30
     });
   } catch (cause) {
     if (isFinalityTimeout(cause)) {
@@ -182,7 +185,44 @@ async function waitForFinality(
     }
     throw cause;
   }
-  const finalized = statusName(receipt) === "FINALIZED";
+  if (statusName(acceptedReceipt) === "FINALIZED") {
+    return {
+      id: hash,
+      submitted: true,
+      finalized: true,
+      message: "Transaction finalized; reload canonical contract state."
+    };
+  }
+  if (client.finalizeTransaction) {
+    try {
+      await client.finalizeTransaction({ txId: hash });
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : String(cause ?? "");
+      if (!/FINALIZED|finalized/.test(message)) {
+        throw cause;
+      }
+    }
+  }
+  let finalizedReceipt: Record<string, unknown>;
+  try {
+    finalizedReceipt = await client.waitForTransactionReceipt({
+      hash,
+      status: "FINALIZED",
+      interval: 7000,
+      retries: 24
+    });
+  } catch (cause) {
+    if (isFinalityTimeout(cause) || isReceiptNotIndexedYet(cause)) {
+      return {
+        id: hash,
+        submitted: true,
+        finalized: false,
+        message: "Transaction accepted; wait for finality before relying on state."
+      };
+    }
+    throw cause;
+  }
+  const finalized = statusName(finalizedReceipt) === "FINALIZED";
   return {
     id: hash,
     submitted: true,
