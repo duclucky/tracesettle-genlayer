@@ -94,6 +94,27 @@ describe("wallet adapter", () => {
     ).resolves.toHaveLength(1);
   });
 
+  it("deduplicates the same wallet exposed through EIP-6963 and legacy globals", async () => {
+    const announcedOkx = { request: vi.fn() };
+    const legacyOkx = { request: vi.fn() };
+    const target = new EventTarget() as WalletEnvironment;
+    target.okxwallet = { ethereum: legacyOkx };
+    target.addEventListener?.("eip6963:requestProvider", () => {
+      target.dispatchEvent?.(
+        new CustomEvent("eip6963:announceProvider", {
+          detail: {
+            info: { name: "OKX Wallet", rdns: "com.okx.wallet" },
+            provider: announcedOkx
+          }
+        })
+      );
+    });
+
+    await expect(discoverInjectedWallets(target, 0)).resolves.toEqual([
+      expect.objectContaining({ label: "OKX Wallet", provider: announcedOkx })
+    ]);
+  });
+
   it("uses a wallet-specific nested EIP-1193 provider", async () => {
     const provider = { request: vi.fn() };
 

@@ -73,18 +73,49 @@ function detectionFromCandidate(candidate: WalletCandidate): WalletDetection {
 function addCandidate(
   candidates: WalletCandidate[],
   seenProviders: Eip1193Provider[],
+  seenWallets: Set<string>,
   provider: Eip1193Provider | undefined,
   label: string
 ) {
   if (!provider || seenProviders.includes(provider)) {
     return;
   }
+  const walletIdentity = knownWalletIdentity(label);
+  if (walletIdentity && seenWallets.has(walletIdentity)) {
+    return;
+  }
   seenProviders.push(provider);
+  if (walletIdentity) {
+    seenWallets.add(walletIdentity);
+  }
   candidates.push({
     id: `${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${candidates.length + 1}`,
     label,
     provider
   });
+}
+
+function knownWalletIdentity(label: string): string | undefined {
+  const normalized = label.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  if (normalized === "okx" || normalized === "okx wallet") {
+    return "okx";
+  }
+  if (normalized === "metamask" || normalized === "meta mask") {
+    return "metamask";
+  }
+  if (normalized === "rabby" || normalized === "rabby wallet") {
+    return "rabby";
+  }
+  if (normalized === "coinbase" || normalized === "coinbase wallet") {
+    return "coinbase";
+  }
+  if (normalized === "brave" || normalized === "brave wallet") {
+    return "brave";
+  }
+  if (normalized === "phantom" || normalized === "phantom wallet") {
+    return "phantom";
+  }
+  return undefined;
 }
 
 function isTransactionRequest(value: unknown): value is Record<string, unknown> {
@@ -134,15 +165,22 @@ export function detectInjectedWallet(source: WalletEnvironment): WalletDetection
 function fallbackWalletCandidates(source: WalletEnvironment): WalletCandidate[] {
   const candidates: WalletCandidate[] = [];
   const seenProviders: Eip1193Provider[] = [];
+  const seenWallets = new Set<string>();
   const providerList = objectProperty(source.ethereum, "providers");
   if (Array.isArray(providerList)) {
     for (const candidate of providerList) {
       const provider = asProvider(candidate);
-      addCandidate(candidates, seenProviders, provider, providerLabel(candidate));
+      addCandidate(candidates, seenProviders, seenWallets, provider, providerLabel(candidate));
     }
   }
 
-  addCandidate(candidates, seenProviders, asProvider(source.ethereum), providerLabel(source.ethereum));
+  addCandidate(
+    candidates,
+    seenProviders,
+    seenWallets,
+    asProvider(source.ethereum),
+    providerLabel(source.ethereum)
+  );
 
   const walletSpecificCandidates: Array<[unknown, string]> = [
     [source.okxwallet, "OKX Wallet"],
@@ -153,7 +191,7 @@ function fallbackWalletCandidates(source: WalletEnvironment): WalletCandidate[] 
 
   for (const [candidate, label] of walletSpecificCandidates) {
     const provider = asProvider(candidate) ?? asProvider(objectProperty(candidate, "ethereum"));
-    addCandidate(candidates, seenProviders, provider, label);
+    addCandidate(candidates, seenProviders, seenWallets, provider, label);
   }
 
   return candidates;
@@ -214,6 +252,7 @@ export async function discoverInjectedWallets(
     let timer: ReturnType<typeof setTimeout> | undefined;
     const announcedCandidates: WalletCandidate[] = [];
     const seenProviders: Eip1193Provider[] = [];
+    const seenWallets = new Set<string>();
 
     const finish = () => {
       if (settled) {
@@ -226,7 +265,13 @@ export async function discoverInjectedWallets(
       source.removeEventListener?.("eip6963:announceProvider", handleAnnouncement);
       const fallbacks = fallbackWalletCandidates(source);
       for (const candidate of fallbacks) {
-        addCandidate(announcedCandidates, seenProviders, candidate.provider, candidate.label);
+        addCandidate(
+          announcedCandidates,
+          seenProviders,
+          seenWallets,
+          candidate.provider,
+          candidate.label
+        );
       }
       resolve(announcedCandidates);
     };
@@ -234,7 +279,7 @@ export async function discoverInjectedWallets(
     const handleAnnouncement: EventListener = (event) => {
       const result = candidateFromAnnouncement(event);
       if (result) {
-        addCandidate(announcedCandidates, seenProviders, result.provider, result.label);
+        addCandidate(announcedCandidates, seenProviders, seenWallets, result.provider, result.label);
       }
     };
 
