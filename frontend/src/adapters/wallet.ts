@@ -3,6 +3,7 @@ export interface Eip1193Provider {
 }
 
 const genLayerEvmChainId = "0x107d";
+const fallbackGenLayerGasPrice = "0xb2d05e0";
 
 export interface WalletEnvironment {
   ethereum?: unknown;
@@ -122,9 +123,25 @@ function isTransactionRequest(value: unknown): value is Record<string, unknown> 
   return typeof value === "object" && value !== null;
 }
 
+function isPositiveHexQuantity(value: unknown): value is `0x${string}` {
+  return typeof value === "string" && /^0x[0-9a-fA-F]+$/.test(value) && BigInt(value) > 0n;
+}
+
+async function currentGasPrice(provider: Eip1193Provider): Promise<`0x${string}`> {
+  try {
+    const gasPrice = await provider.request({ method: "eth_gasPrice" });
+    if (isPositiveHexQuantity(gasPrice)) {
+      return gasPrice;
+    }
+  } catch {
+    return fallbackGenLayerGasPrice;
+  }
+  return fallbackGenLayerGasPrice;
+}
+
 export function createBrowserWalletProvider(provider: Eip1193Provider): Eip1193Provider {
   return {
-    request(args) {
+    async request(args) {
       if (
         args.method !== "eth_sendTransaction" ||
         !Array.isArray(args.params) ||
@@ -140,7 +157,7 @@ export function createBrowserWalletProvider(provider: Eip1193Provider): Eip1193P
         params: [
           {
             ...transaction,
-            gasPrice: "0x1"
+            gasPrice: await currentGasPrice(provider)
           },
           ...rest
         ]

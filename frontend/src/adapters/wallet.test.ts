@@ -156,11 +156,14 @@ describe("wallet adapter", () => {
     expect(request).toHaveBeenCalledWith({ method: "eth_requestAccounts" });
   });
 
-  it("normalizes zero gas price before browser wallet transaction prompts", async () => {
+  it("normalizes zero gas price to the current chain gas price before wallet prompts", async () => {
     const requests: Array<{ method: string; params?: unknown[] | Record<string, unknown> }> = [];
     const provider = {
       request: vi.fn(async (args: { method: string; params?: unknown[] | Record<string, unknown> }) => {
         requests.push(args);
+        if (args.method === "eth_gasPrice") {
+          return "0xb2d05e0";
+        }
         return "0xabc";
       })
     };
@@ -179,9 +182,10 @@ describe("wallet adapter", () => {
       ]
     });
 
-    expect(requests[0].params).toEqual([
+    expect(requests[0]).toEqual({ method: "eth_gasPrice" });
+    expect(requests[1].params).toEqual([
       expect.objectContaining({
-        gasPrice: "0x1"
+        gasPrice: "0xb2d05e0"
       })
     ]);
   });
