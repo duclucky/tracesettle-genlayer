@@ -52,7 +52,7 @@ export function TransactionState({
   const Icon = copy.icon;
 
   return (
-    <aside className="notice">
+    <aside className={`notice transaction-state transaction-state--${stage}`}>
       <strong>
         <Icon size={18} weight="bold" aria-hidden="true" /> {copy.title}
       </strong>

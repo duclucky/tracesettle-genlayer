@@ -869,6 +869,50 @@ summary {
   box-shadow: 0 12px 28px rgb(49 95 75 / 0.24);
 }
 
+/* Wallet and transaction feedback stay visible without competing with content. */
+.terranova-wallet-status {
+  border-color: var(--line);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.68);
+  box-shadow: 0 8px 26px rgb(14 17 16 / 0.06);
+  backdrop-filter: blur(14px);
+}
+
+.terranova-wallet-status .status-dot {
+  background: var(--moss);
+}
+
+.terranova-wallet-status .link-button {
+  color: var(--ink);
+}
+
+.transaction-state {
+  border-color: var(--line);
+  background: rgb(255 255 255 / 0.58);
+  color: var(--ink);
+}
+
+.transaction-state strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.transaction-state--finalized {
+  border-color: rgb(49 95 75 / 0.28);
+  background: var(--moss-soft);
+}
+
+.transaction-state--retryable {
+  border-color: rgb(139 94 19 / 0.28);
+  background: var(--amber-soft);
+}
+
+.transaction-state--failed {
+  border-color: rgb(166 62 62 / 0.28);
+  background: var(--coral-soft);
+}
+
 @media (min-width: 768px) {
   .editorial-page .grid.two {
     grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);

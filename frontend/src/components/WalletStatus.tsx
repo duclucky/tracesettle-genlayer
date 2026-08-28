@@ -101,7 +101,7 @@ export function WalletStatus() {
   }
 
   return (
-    <div className="wallet-status" aria-label="Wallet and network status">
+    <div className="wallet-status terranova-wallet-status" aria-label="Wallet and network status">
       <span className="status-dot" aria-hidden="true" />
       <span>Studionet</span>
       {address ? (

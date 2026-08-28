@@ -134,6 +134,21 @@ describe("TraceSettle route map", () => {
     expect(screen.getByTestId("terranova-shell")).toBeInTheDocument();
   });
 
+  it("keeps wallet and lifecycle feedback as distinct Terranova surfaces", () => {
+    render(
+      <MemoryRouter initialEntries={["/workflows/new"]}>
+        <AppRoutes />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByLabelText("Wallet and network status")).toHaveClass(
+      "terranova-wallet-status"
+    );
+    expect(screen.getAllByText("Ready for wallet")[0].closest("aside")).toHaveClass(
+      "transaction-state"
+    );
+  });
+
   it("does not present the fixture wallet as a real connected account", () => {
     render(
       <MemoryRouter initialEntries={["/"]}>
