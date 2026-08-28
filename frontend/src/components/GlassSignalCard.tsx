@@ -121,7 +121,7 @@ export function GlassSignalCard() {
       </svg>
 
       <div className="glass-card__actions">
-        <Link className="glass-card__link" to="/workflows/trace-1001/evidence/step-build">
+        <Link className="glass-card__link" to="/workflows">
           Review assigned steps
         </Link>
       </div>

@@ -140,6 +140,10 @@ describe("TraceSettle route map", () => {
     expect(screen.getByText("Canonical workflow signal")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Create workflow/ })).toHaveAttribute("href", "/workflows/new");
     expect(screen.getByRole("link", { name: /Open inbox/ })).toHaveAttribute("href", "/workflows");
+    expect(screen.getByRole("link", { name: "Review assigned steps" })).toHaveAttribute(
+      "href",
+      "/workflows"
+    );
   });
 
   it("renders the Terranova video backdrop and liquid glass primitives", () => {
