@@ -444,6 +444,40 @@ describe("wallet adapter", () => {
     ).toBe("User rejected the request");
   });
 
+  it("prefers useful viem error details over generic wrapper messages", () => {
+    expect(
+      walletRequestErrorMessage({
+        shortMessage: "An internal error was received.",
+        details: "Transaction failed",
+        cause: {
+          message:
+            "execution reverted: create_workflow requires exactly 2 GEN from the sponsor wallet"
+        },
+        message:
+          "An internal error was received. Details: Transaction failed Version: viem@2.55.13"
+      })
+    ).toBe(
+      "An internal error was received. Details: Transaction failed. Cause: execution reverted: create_workflow requires exactly 2 GEN from the sponsor wallet"
+    );
+  });
+
+  it("extracts nested provider data messages from wallet errors", () => {
+    expect(
+      walletRequestErrorMessage({
+        message:
+          "An internal error was received. Details: Transaction failed Version: viem@2.55.13",
+        cause: {
+          data: {
+            message:
+              "transaction gas rate limit exceeded: node is at capacity, retry in ~675ms"
+          }
+        }
+      })
+    ).toBe(
+      "An internal error was received. Cause: transaction gas rate limit exceeded: node is at capacity, retry in ~675ms"
+    );
+  });
+
   it("shortens addresses only for display", () => {
     expect(shortenAddress("0x1234567890123456789012345678901234567890")).toBe("0x1234...7890");
   });

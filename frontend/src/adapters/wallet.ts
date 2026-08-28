@@ -410,18 +410,75 @@ export function walletRequestErrorMessage(
   cause: unknown,
   fallback = "Wallet request failed"
 ): string {
-  if (cause instanceof Error && cause.message.trim()) {
-    return cause.message.trim();
-  }
-  const providerMessage = objectProperty(cause, "message");
-  if (typeof providerMessage === "string" && providerMessage.trim()) {
-    return providerMessage.trim();
+  const nestedMessage =
+    nestedWalletErrorMessage(objectProperty(cause, "cause")) ??
+    nestedWalletErrorMessage(objectProperty(cause, "data"));
+  const shortMessage = cleanedErrorMessage(objectProperty(cause, "shortMessage"));
+  const details = cleanedErrorMessage(objectProperty(cause, "details"));
+  const rawMessage = cleanedErrorMessage(
+    cause instanceof Error ? cause.message : objectProperty(cause, "message")
+  );
+
+  const baseMessage =
+    shortMessage ||
+    (nestedMessage && isGenericViemTransactionFailure(rawMessage)
+      ? "An internal error was received."
+      : rawMessage);
+  if (baseMessage) {
+    let message = baseMessage;
+    if (details && !message.includes(details)) {
+      message = `${trimTrailingPeriod(message)}. Details: ${details}`;
+    }
+    if (nestedMessage && !message.includes(nestedMessage)) {
+      message = `${trimTrailingPeriod(message)}. Cause: ${nestedMessage}`;
+    }
+    return message;
   }
   const providerCode = objectProperty(cause, "code");
   if (typeof providerCode === "number" || typeof providerCode === "string") {
     return `${fallback} (code ${providerCode})`;
   }
   return fallback;
+}
+
+function cleanedErrorMessage(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  const cleaned = value.replace(/\s*Version:\s*viem@[^\s]+$/i, "").trim();
+  return cleaned || undefined;
+}
+
+function trimTrailingPeriod(value: string): string {
+  return value.replace(/\.+$/g, "");
+}
+
+function isGenericViemTransactionFailure(value: string | undefined): boolean {
+  return (
+    value === "Transaction failed" ||
+    value === "An internal error was received. Details: Transaction failed"
+  );
+}
+
+function nestedWalletErrorMessage(cause: unknown, depth = 0): string | undefined {
+  if (depth > 5 || typeof cause !== "object" || cause === null) {
+    return undefined;
+  }
+  const candidates = [
+    cleanedErrorMessage(objectProperty(objectProperty(cause, "data"), "message")),
+    cleanedErrorMessage(objectProperty(cause, "details")),
+    cleanedErrorMessage(objectProperty(cause, "shortMessage")),
+    cleanedErrorMessage(objectProperty(cause, "message"))
+  ].filter((item): item is string => Boolean(item) && !isGenericViemTransactionFailure(item));
+
+  if (candidates[0]) {
+    return candidates[0];
+  }
+
+  return (
+    nestedWalletErrorMessage(objectProperty(cause, "cause"), depth + 1) ??
+    nestedWalletErrorMessage(objectProperty(cause, "data"), depth + 1)
+  );
 }
 
 function isMissingChainError(cause: unknown): boolean {
