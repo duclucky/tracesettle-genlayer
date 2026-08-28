@@ -85,8 +85,8 @@ def test_review_path_verifies_artifact_provenance_before_settlement_prompt():
 
 def test_contract_enforces_dag_and_step_bounds_in_source():
     text = source()
-    assert "MAX_STEPS = 6" in text
-    assert "MAX_DEPENDENCIES = 3" in text
+    assert "MAX_STEPS = u256(6)" in text
+    assert "MAX_DEPENDENCIES = u256(3)" in text
     assert "too many steps" in text
     assert "too many dependencies" in text
     assert "unknown dependency" in text

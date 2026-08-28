@@ -7,8 +7,8 @@ import json
 
 
 GEN = 10 ** 18
-MAX_STEPS = 6
-MAX_DEPENDENCIES = 3
+MAX_STEPS = u256(6)
+MAX_DEPENDENCIES = u256(3)
 
 
 @gl.evm.contract_interface
