@@ -78,7 +78,7 @@ export function WorkflowInboxPage() {
   ]);
 
   return (
-    <section className="page">
+    <section className="page editorial-page">
       <div className="page-header">
         <span className="page-kicker">Canonical workflow reads</span>
         <h1>Workflow inbox</h1>

@@ -1,6 +1,6 @@
 export function HelpPage() {
   return (
-    <section className="page">
+    <section className="page editorial-page">
       <div className="page-header">
         <span className="page-kicker">Verification guide</span>
         <h1>Verification guide</h1>

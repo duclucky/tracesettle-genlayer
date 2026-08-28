@@ -4,7 +4,7 @@ export function SettingsPage() {
   const runtime = resolveRuntimeConfig(import.meta.env);
 
   return (
-    <section className="page">
+    <section className="page editorial-page">
       <div className="page-header">
         <span className="page-kicker">Connection truth</span>
         <h1>Wallet and network</h1>

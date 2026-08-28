@@ -765,6 +765,120 @@ summary {
   backdrop-filter: blur(14px);
 }
 
+/* Editorial internal screens */
+.editorial-page {
+  padding-top: clamp(44px, 7vw, 88px);
+}
+
+.editorial-page .page-header {
+  max-width: 880px;
+  gap: 16px;
+  margin-bottom: clamp(28px, 5vw, 52px);
+}
+
+.editorial-page .page-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  color: var(--moss);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.editorial-page .page-kicker::before {
+  width: 28px;
+  height: 1px;
+  background: var(--moss);
+  content: "";
+}
+
+.editorial-page .page-header h1 {
+  max-width: 14ch;
+  font-size: clamp(2.8rem, 7vw, 5.8rem);
+  font-weight: 400;
+  letter-spacing: -0.065em;
+}
+
+.editorial-page .grid {
+  gap: 20px;
+}
+
+.editorial-page .panel,
+.editorial-page .form-panel,
+.editorial-page .workflow-row {
+  border-color: var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(14px);
+}
+
+.editorial-page .panel,
+.editorial-page .form-panel {
+  padding: clamp(20px, 3vw, 30px);
+}
+
+.editorial-page .workflow-row {
+  padding: clamp(20px, 3vw, 28px);
+  transition:
+    border-color var(--motion-fast) var(--ease-out),
+    transform var(--motion-fast) var(--ease-out),
+    box-shadow var(--motion-fast) var(--ease-out);
+}
+
+.editorial-page .workflow-row:hover {
+  border-color: var(--line-strong);
+  box-shadow: 0 22px 64px rgb(14 17 16 / 0.12);
+  transform: translateY(-2px);
+}
+
+.editorial-page .step-item,
+.editorial-page .timeline-item,
+.editorial-page .credit-line {
+  border-color: var(--line);
+  border-radius: var(--radius-control);
+  background: rgb(255 255 255 / 0.58);
+}
+
+.editorial-page .notice {
+  border-radius: var(--radius-control);
+  background: rgb(220 235 226 / 0.7);
+}
+
+.editorial-page .danger-note {
+  background: rgb(244 217 215 / 0.72);
+}
+
+.editorial-page .filter-chip,
+.editorial-page .button,
+.editorial-page .field-grid input,
+.editorial-page .field-grid textarea,
+.editorial-page .field-grid select {
+  border-radius: var(--radius-control);
+}
+
+.editorial-page .button.primary {
+  border-color: var(--moss);
+  box-shadow: 0 8px 22px rgb(49 95 75 / 0.18);
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+}
+
+.editorial-page .button.primary:hover:not(:disabled) {
+  background: var(--color-accent-strong);
+  box-shadow: 0 12px 28px rgb(49 95 75 / 0.24);
+}
+
+@media (min-width: 768px) {
+  .editorial-page .grid.two {
+    grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+  }
+
+  .editorial-page .grid.three {
+    gap: 24px;
+  }
+}
+
 @media (min-width: 768px) {
   .hero-intro {
     grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.85fr);

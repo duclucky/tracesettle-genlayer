@@ -159,7 +159,7 @@ export function EvidenceSubmissionPage() {
   }
 
   return (
-    <section className="page">
+    <section className="page editorial-page">
       <div className="page-header">
         <span className="page-kicker">{step?.providerLabel ?? "Canonical provider step"}</span>
         <h1>Submit evidence</h1>

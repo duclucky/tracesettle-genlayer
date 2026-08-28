@@ -101,6 +101,29 @@ describe("TraceSettle route map", () => {
     expect(screen.getByRole("link", { name: /Open inbox/ })).toHaveAttribute("href", "/workflows");
   });
 
+  it("uses the editorial layout on internal screens", () => {
+    const inbox = render(
+      <MemoryRouter initialEntries={["/workflows"]}>
+        <AppRoutes />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole("heading", { name: "Workflow inbox" }).closest("section")).toHaveClass(
+      "editorial-page"
+    );
+
+    inbox.unmount();
+    render(
+      <MemoryRouter initialEntries={["/credits"]}>
+        <AppRoutes />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole("heading", { name: "Credits" }).closest("section")).toHaveClass(
+      "editorial-page"
+    );
+  });
+
   it("marks the application shell with the Terranova visual system", () => {
     render(
       <MemoryRouter initialEntries={["/"]}>

@@ -62,7 +62,7 @@ export function CreditsPage() {
   }
 
   return (
-    <section className="page">
+    <section className="page editorial-page">
       <div className="page-header">
         <span className="page-kicker">Canonical credit ledger</span>
         <h1>Credits</h1>

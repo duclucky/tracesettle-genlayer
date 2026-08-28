@@ -10,7 +10,7 @@ export function NewWorkflowPage() {
   const objectiveValid = objective.trim().length > 0;
 
   return (
-    <section className="page">
+    <section className="page editorial-page">
       <div className="page-header">
         <span className="page-kicker">Sponsor setup</span>
         <h1>Create workflow</h1>
