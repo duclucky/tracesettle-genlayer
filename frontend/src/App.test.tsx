@@ -283,6 +283,10 @@ describe("TraceSettle route map", () => {
     await user.click(screen.getByRole("button", { name: "Rabby" }));
 
     expect(rabbyRequest).toHaveBeenCalledWith({ method: "eth_requestAccounts" });
+    expect(rabbyRequest).toHaveBeenCalledWith({
+      method: "wallet_switchEthereumChain",
+      params: [{ chainId: "0x107d" }]
+    });
     expect(okxRequest).not.toHaveBeenCalledWith({ method: "eth_requestAccounts" });
     expect(await screen.findByRole("button", { name: "0x2222...2222" })).toBeInTheDocument();
   });

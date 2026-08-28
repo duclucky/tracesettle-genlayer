@@ -4,6 +4,7 @@ import {
   connectInjectedWallet,
   detectInjectedWallet,
   discoverInjectedWallets,
+  ensureGenLayerEvmNetwork,
   readAuthorizedWallet,
   shortenAddress,
   type WalletCandidate,
@@ -113,6 +114,7 @@ export function WalletStatus() {
       writeDisconnectSuppression(false);
       const result = await connectInjectedWallet(candidate.provider);
       if (result.address) {
+        await ensureGenLayerEvmNetwork(candidate.provider, runtime.evmRpcUrl);
         setWalletSession({
           address: result.address,
           provider: candidate.provider,

@@ -330,6 +330,18 @@ export function walletRequestErrorMessage(
   return fallback;
 }
 
+function isMissingChainError(cause: unknown): boolean {
+  const code = objectProperty(cause, "code");
+  if (code === 4902 || code === "4902") {
+    return true;
+  }
+  const message = cause instanceof Error ? cause.message : objectProperty(cause, "message");
+  return (
+    typeof message === "string" &&
+    /unrecognized chain|unknown chain|chain id .*not.*found|try adding the chain/i.test(message)
+  );
+}
+
 export async function connectInjectedWallet(provider: Eip1193Provider): Promise<WalletConnection> {
   const accounts = await provider.request({ method: "eth_requestAccounts" });
   if (Array.isArray(accounts) && typeof accounts[0] === "string") {
@@ -354,8 +366,7 @@ export async function ensureGenLayerEvmNetwork(
       params: [{ chainId: genLayerEvmChainId }]
     });
   } catch (cause) {
-    const code = objectProperty(cause, "code");
-    if (code !== 4902 && code !== "4902") {
+    if (!isMissingChainError(cause)) {
       throw cause;
     }
     await provider.request({

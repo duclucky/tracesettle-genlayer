@@ -216,6 +216,29 @@ describe("wallet adapter", () => {
     });
   });
 
+  it("adds the GenLayer EVM chain when the wallet reports an unrecognized chain by message", async () => {
+    const request = vi
+      .fn()
+      .mockRejectedValueOnce(
+        new Error(
+          'Unrecognized chain ID "0x107d". Try adding the chain using wallet_switchEthereumChain first.'
+        )
+      )
+      .mockResolvedValueOnce(undefined);
+
+    await ensureGenLayerEvmNetwork({ request }, "https://rpc.testnet-chain.genlayer.com");
+
+    expect(request).toHaveBeenNthCalledWith(2, {
+      method: "wallet_addEthereumChain",
+      params: [
+        expect.objectContaining({
+          chainId: "0x107d",
+          rpcUrls: ["https://rpc.testnet-chain.genlayer.com"]
+        })
+      ]
+    });
+  });
+
   it("reads an already-authorized account without requesting a connection", async () => {
     const request = vi.fn().mockResolvedValue(["0x1234567890123456789012345678901234567890"]);
 
