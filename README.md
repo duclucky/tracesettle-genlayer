@@ -54,7 +54,7 @@ instead of treating wallet submission as success.
 - Browser-wallet workflow: prior evidence on superseded deployment; not claimed
   as remediated-contract browser write proof.
 - Current local check: 1 contract, 20 direct tests, 4 deployment/config tests,
-  86 frontend tests, production build passing
+  87 frontend tests, production build passing
 - Provenance remediation: deployed contract rejects missing or mismatched
   artifact provenance before settlement.
 - Reviewer remediation: frontend wallet writes now switch/add Studionet chain

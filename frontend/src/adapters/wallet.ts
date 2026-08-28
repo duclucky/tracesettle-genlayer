@@ -284,7 +284,7 @@ function fallbackWalletCandidates(source: WalletEnvironment): WalletCandidate[] 
   ];
 
   for (const [candidate, label] of walletSpecificCandidates) {
-    const provider = asProvider(candidate) ?? asProvider(objectProperty(candidate, "ethereum"));
+    const provider = asProvider(objectProperty(candidate, "ethereum")) ?? asProvider(candidate);
     addCandidate(candidates, seenProviders, seenWallets, provider, label);
   }
 

@@ -162,6 +162,19 @@ describe("wallet adapter", () => {
     });
   });
 
+  it("prefers wallet-specific nested EVM providers over generic outer wallet providers", async () => {
+    const outerProvider = { request: vi.fn() };
+    const evmProvider = { request: vi.fn() };
+
+    await expect(
+      discoverInjectedWallet({ okxwallet: { ...outerProvider, ethereum: evmProvider } }, 0)
+    ).resolves.toEqual({
+      status: "available",
+      provider: evmProvider,
+      label: "OKX Wallet available"
+    });
+  });
+
   it("ignores invalid announced and legacy candidates", async () => {
     const target = new EventTarget() as WalletEnvironment;
     target.ethereum = {};
