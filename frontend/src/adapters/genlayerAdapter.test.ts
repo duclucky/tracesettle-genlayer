@@ -21,7 +21,7 @@ describe("GenLayer TraceSettle adapter", () => {
         evmRpcUrl: "https://rpc.testnet-chain.genlayer.com"
       })
     ).toMatchObject({
-      id: 61999,
+      id: 4221,
       rpcUrls: { default: { http: ["/genlayer-rpc"] } },
       evmRpcUrls: { default: { http: ["https://rpc.testnet-chain.genlayer.com"] } }
     });
