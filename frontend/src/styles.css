@@ -961,6 +961,33 @@ summary {
   }
 }
 
+@media (max-width: 767px) {
+  .terranova-shell .topbar-inner {
+    width: calc(100% - 32px);
+    min-width: 0;
+    flex-wrap: wrap;
+    row-gap: 10px;
+  }
+
+  .terranova-shell .wallet-status {
+    flex: 1 1 100%;
+    min-width: 0;
+    max-width: 100%;
+    justify-content: space-between;
+    overflow: visible;
+  }
+
+  .terranova-shell .wallet-status > span {
+    min-width: 0;
+  }
+
+  .terranova-shell .wallet-status > span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
