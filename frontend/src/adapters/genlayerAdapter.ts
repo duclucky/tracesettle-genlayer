@@ -233,6 +233,16 @@ async function waitForFinality(
   };
 }
 
+function browserWalletStudioSubmitResult(hash: `0x${string}` | string): TransactionResult {
+  return {
+    id: hash,
+    submitted: true,
+    finalized: false,
+    message:
+      "Wallet transaction submitted to GenLayer EVM; reload canonical contract state after indexing/finality before relying on it."
+  };
+}
+
 export function createGenLayerTraceSettleAdapter(options: AdapterOptions): TraceSettleAdapter {
   const client = options.client ?? createSdkClient(options);
 
@@ -279,6 +289,9 @@ export function createGenLayerTraceSettleAdapter(options: AdapterOptions): Trace
       args,
       value
     });
+    if (options.provider) {
+      return browserWalletStudioSubmitResult(hash);
+    }
     return waitForFinality(client, hash);
   }
 

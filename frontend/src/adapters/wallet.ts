@@ -4,6 +4,7 @@ export interface Eip1193Provider {
 
 const genLayerEvmChainId = "0x107d";
 const fallbackGenLayerGasPrice = "0xb2d05e0";
+const minimumGenLayerGasPrice = BigInt(fallbackGenLayerGasPrice);
 
 export interface WalletEnvironment {
   ethereum?: unknown;
@@ -127,10 +128,17 @@ function isPositiveHexQuantity(value: unknown): value is `0x${string}` {
   return typeof value === "string" && /^0x[0-9a-fA-F]+$/.test(value) && BigInt(value) > 0n;
 }
 
+function needsGasPriceNormalization(value: unknown): boolean {
+  if (!isPositiveHexQuantity(value)) {
+    return true;
+  }
+  return BigInt(value) < minimumGenLayerGasPrice;
+}
+
 async function currentGasPrice(provider: Eip1193Provider): Promise<`0x${string}`> {
   try {
     const gasPrice = await provider.request({ method: "eth_gasPrice" });
-    if (isPositiveHexQuantity(gasPrice)) {
+    if (isPositiveHexQuantity(gasPrice) && BigInt(gasPrice) >= minimumGenLayerGasPrice) {
       return gasPrice;
     }
   } catch {
@@ -139,28 +147,77 @@ async function currentGasPrice(provider: Eip1193Provider): Promise<`0x${string}`
   return fallbackGenLayerGasPrice;
 }
 
+function retryAfterMs(cause: unknown): number | undefined {
+  const message = cause instanceof Error ? cause.message : objectProperty(cause, "message");
+  const code = objectProperty(cause, "code");
+  const looksLikeCapacityError =
+    code === -32005 ||
+    code === "-32005" ||
+    (typeof message === "string" &&
+      /gas rate limit exceeded|node is at capacity/i.test(message));
+  if (!looksLikeCapacityError) {
+    return undefined;
+  }
+
+  const dataRetryAfter = objectProperty(objectProperty(cause, "data"), "retryAfterMs");
+  const parsedDataDelay =
+    typeof dataRetryAfter === "string" || typeof dataRetryAfter === "number"
+      ? Number(dataRetryAfter)
+      : Number.NaN;
+  const parsedMessageDelay =
+    typeof message === "string" ? Number(message.match(/retry in ~?(\d+)ms/i)?.[1]) : Number.NaN;
+  const delayMs = Number.isFinite(parsedDataDelay)
+    ? parsedDataDelay
+    : Number.isFinite(parsedMessageDelay)
+      ? parsedMessageDelay
+      : 750;
+  return Math.max(0, Math.min(delayMs, 3000));
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function requestWithGasRateRetry(
+  provider: Eip1193Provider,
+  args: { method: string; params?: unknown[] | Record<string, unknown> },
+  retries = 2
+): Promise<unknown> {
+  try {
+    return await provider.request(args);
+  } catch (cause) {
+    const delayMs = retryAfterMs(cause);
+    if (delayMs === undefined || retries <= 0) {
+      throw cause;
+    }
+    if (delayMs > 0) {
+      await sleep(delayMs);
+    }
+    return requestWithGasRateRetry(provider, args, retries - 1);
+  }
+}
+
 export function createBrowserWalletProvider(provider: Eip1193Provider): Eip1193Provider {
   return {
     async request(args) {
       if (
         args.method !== "eth_sendTransaction" ||
         !Array.isArray(args.params) ||
-        !isTransactionRequest(args.params[0]) ||
-        args.params[0].gasPrice !== "0x0"
+        !isTransactionRequest(args.params[0])
       ) {
         return provider.request(args);
       }
 
       const [transaction, ...rest] = args.params;
-      return provider.request({
-        ...args,
-        params: [
-          {
+      const normalizedTransaction = needsGasPriceNormalization(transaction.gasPrice)
+        ? {
             ...transaction,
             gasPrice: await currentGasPrice(provider)
-          },
-          ...rest
-        ]
+          }
+        : transaction;
+      return requestWithGasRateRetry(provider, {
+        ...args,
+        params: [normalizedTransaction, ...rest]
       });
     }
   };

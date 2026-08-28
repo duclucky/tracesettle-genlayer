@@ -311,6 +311,28 @@ describe("GenLayer TraceSettle adapter", () => {
     });
   });
 
+  it("does not poll GenLayer finality with a browser-wallet Studio EVM submit hash", async () => {
+    const client = createClientStub();
+    const provider = { request: vi.fn() };
+    client.writeContract.mockResolvedValue("0xevmhash");
+    const adapter = createGenLayerTraceSettleAdapter({
+      address: "0x1234567890123456789012345678901234567890",
+      account: "0x2222222222222222222222222222222222222222",
+      provider,
+      client
+    });
+
+    await expect(adapter.lockEvidence("trace-1")).resolves.toEqual({
+      id: "0xevmhash",
+      submitted: true,
+      finalized: false,
+      message:
+        "Wallet transaction submitted to GenLayer EVM; reload canonical contract state after indexing/finality before relying on it."
+    });
+    expect(client.waitForTransactionReceipt).not.toHaveBeenCalled();
+    expect(client.finalizeTransaction).not.toHaveBeenCalled();
+  });
+
   it("uses 1 GEN for provider bond acceptance", async () => {
     const client = createClientStub();
     client.writeContract.mockResolvedValue("0x123");

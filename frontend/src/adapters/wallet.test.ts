@@ -190,6 +190,77 @@ describe("wallet adapter", () => {
     ]);
   });
 
+  it("normalizes below-minimum gas price before wallet prompts", async () => {
+    const requests: Array<{ method: string; params?: unknown[] | Record<string, unknown> }> = [];
+    const provider = {
+      request: vi.fn(async (args: { method: string; params?: unknown[] | Record<string, unknown> }) => {
+        requests.push(args);
+        if (args.method === "eth_gasPrice") {
+          return "0xb2d05e0";
+        }
+        return "0xabc";
+      })
+    };
+    const compatibleProvider = createBrowserWalletProvider(provider);
+
+    await compatibleProvider.request({
+      method: "eth_sendTransaction",
+      params: [
+        {
+          from: "0x1111111111111111111111111111111111111111",
+          to: "0x2222222222222222222222222222222222222222",
+          gas: "0x7a120",
+          gasPrice: "0x1",
+          value: "0x0"
+        }
+      ]
+    });
+
+    expect(requests[1].params).toEqual([
+      expect.objectContaining({
+        gasPrice: "0xb2d05e0"
+      })
+    ]);
+  });
+
+  it("retries transient GenLayer RPC gas-rate capacity errors once the wallet request is ready", async () => {
+    const requests: Array<{ method: string; params?: unknown[] | Record<string, unknown> }> = [];
+    const provider = {
+      request: vi.fn(async (args: { method: string; params?: unknown[] | Record<string, unknown> }) => {
+        requests.push(args);
+        if (args.method === "eth_gasPrice") {
+          return "0xb2d05e0";
+        }
+        if (args.method === "eth_sendTransaction" && requests.length === 2) {
+          throw {
+            code: -32005,
+            message: "transaction gas rate limit exceeded: node is at capacity, retry in ~0ms",
+            data: { retryAfterMs: "0" }
+          };
+        }
+        return "0xabc";
+      })
+    };
+    const compatibleProvider = createBrowserWalletProvider(provider);
+
+    await expect(
+      compatibleProvider.request({
+        method: "eth_sendTransaction",
+        params: [
+          {
+            from: "0x1111111111111111111111111111111111111111",
+            to: "0x2222222222222222222222222222222222222222",
+            gas: "0x7a120",
+            gasPrice: "0x1",
+            value: "0x0"
+          }
+        ]
+      })
+    ).resolves.toBe("0xabc");
+
+    expect(requests.filter((request) => request.method === "eth_sendTransaction")).toHaveLength(2);
+  });
+
   it("switches browser wallets to the GenLayer EVM chain before writes", async () => {
     const request = vi.fn().mockResolvedValue(undefined);
 
