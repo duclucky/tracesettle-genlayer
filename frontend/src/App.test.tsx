@@ -88,6 +88,19 @@ describe("TraceSettle route map", () => {
     expect(screen.queryByRole("dialog", { name: "Primary navigation" })).not.toBeInTheDocument();
   });
 
+  it("renders the Terranova hero composition without changing product CTAs", () => {
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <AppRoutes />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole("heading", { name: "Settle the failed workflow" })).toBeInTheDocument();
+    expect(screen.getByText("Canonical workflow signal")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Create workflow/ })).toHaveAttribute("href", "/workflows/new");
+    expect(screen.getByRole("link", { name: /Open inbox/ })).toHaveAttribute("href", "/workflows");
+  });
+
   it("marks the application shell with the Terranova visual system", () => {
     render(
       <MemoryRouter initialEntries={["/"]}>
