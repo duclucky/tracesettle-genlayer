@@ -125,6 +125,20 @@ describe("wallet-backed form payloads", () => {
     expect(screen.getByRole("button", { name: "Submit workflow transaction" })).toBeDisabled();
   });
 
+  it("shows the submitted transaction reference returned by the wallet flow", async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={["/workflows/new"]}>
+        <AppRoutes />
+      </MemoryRouter>
+    );
+
+    await screen.findByRole("button", { name: "0x2222...2222" });
+    await user.click(screen.getByRole("button", { name: "Submit workflow transaction" }));
+
+    expect(await screen.findByText(/Transaction reference: 0xabc/i)).toBeInTheDocument();
+  });
+
   it("submits the URL and digest typed by the accepted provider", async () => {
     const user = userEvent.setup();
     render(

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { resolveRuntimeConfig } from "../adapters/runtimeConfig";
 import {
   ensureGenLayerEvmNetwork,
@@ -26,6 +26,11 @@ function classifyResult(result: TransactionResult): TransactionStage {
   return "failed";
 }
 
+function transactionMessage(result: TransactionResult): string {
+  const reference = result.id ? `Transaction reference: ${result.id}. ` : "";
+  return `${reference}${result.message}`;
+}
+
 export function LiveTraceSettleAction({
   children,
   className,
@@ -43,6 +48,17 @@ export function LiveTraceSettleAction({
       : "No transaction has been signed from this control."
   );
   const busy = stage === "wallet" || stage === "submitted";
+
+  useEffect(() => {
+    if (stage !== "idle") {
+      return;
+    }
+    setMessage(
+      needsConnectedWallet
+        ? "Connect wallet before signing. No transaction has been submitted."
+        : "No transaction has been signed from this control."
+    );
+  }, [needsConnectedWallet, stage]);
 
   async function runAction() {
     if (runtime.mode !== "live" || !runtime.contractAddress) {
@@ -71,7 +87,7 @@ export function LiveTraceSettleAction({
       });
       const result = await action(adapter, address);
       setStage(classifyResult(result));
-      setMessage(result.message);
+      setMessage(transactionMessage(result));
       if (result.finalized) {
         await onCanonicalReload?.();
       }
