@@ -110,11 +110,12 @@ export function WalletStatus() {
 
   async function selectWallet(candidate: WalletCandidate) {
     try {
-      setDisconnectSuppressed(false);
-      writeDisconnectSuppression(false);
       const result = await connectInjectedWallet(candidate.provider);
       if (result.address) {
+        setStatusMessage("Switching to GenLayer EVM");
         await ensureGenLayerEvmNetwork(candidate.provider, runtime.evmRpcUrl);
+        setDisconnectSuppressed(false);
+        writeDisconnectSuppression(false);
         setWalletSession({
           address: result.address,
           provider: candidate.provider,
@@ -126,6 +127,7 @@ export function WalletStatus() {
       );
       setModalOpen(false);
     } catch (cause) {
+      setModalOpen(false);
       setStatusMessage(walletRequestErrorMessage(cause));
     }
   }

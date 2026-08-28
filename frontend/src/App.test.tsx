@@ -396,6 +396,39 @@ describe("TraceSettle route map", () => {
     );
   });
 
+  it("closes the wallet picker without connecting when network switching fails", async () => {
+    const request = vi.fn(async ({ method }: { method: string }) => {
+      if (method === "eth_accounts") {
+        return [];
+      }
+      if (method === "eth_requestAccounts") {
+        return ["0xC495ef51618D03267A1f227aFe5b27B38c748272"];
+      }
+      if (method === "wallet_switchEthereumChain") {
+        throw new Error("GenLayer EVM switch failed");
+      }
+      return undefined;
+    });
+    vi.stubGlobal("ethereum", { name: "Browser wallet", request });
+
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <AppRoutes />
+      </MemoryRouter>
+    );
+
+    await user.click(screen.getByRole("button", { name: "Connect wallet" }));
+    await user.click(await screen.findByRole("button", { name: "Browser wallet" }));
+
+    expect(screen.queryByRole("dialog", { name: "Connect wallet" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "0xC495...8272" })).not.toBeInTheDocument();
+    expect(await screen.findByText("GenLayer EVM switch failed")).toHaveAttribute(
+      "aria-live",
+      "polite"
+    );
+  });
+
   it("restores an already-authorized wallet account after reload", async () => {
     const request = vi.fn(async ({ method }: { method: string }) => {
       if (method === "eth_accounts") {
