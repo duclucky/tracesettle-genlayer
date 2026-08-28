@@ -30,8 +30,8 @@ $env:PYTHONUTF8='1'; npm run check
 20 passed in 0.07s
 ✔ routes production GenLayer RPC proxy before SPA deep links
 Test Files  6 passed (6)
-Tests  85 passed (85)
-✓ built in 459ms
+Tests  86 passed (86)
+✓ built in 467ms
 ```
 
 ```powershell

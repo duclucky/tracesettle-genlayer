@@ -335,7 +335,7 @@ function candidateFromAnnouncement(event: Event): WalletCandidate | undefined {
 
 export async function discoverInjectedWallets(
   source: WalletEnvironment,
-  announcementWaitMs = 100
+  announcementWaitMs = 600
 ): Promise<WalletCandidate[]> {
   if (!source.addEventListener || !source.dispatchEvent) {
     return fallbackWalletCandidates(source);

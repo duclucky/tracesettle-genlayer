@@ -83,6 +83,41 @@ describe("wallet adapter", () => {
     ]);
   });
 
+  it("waits long enough for browser wallets that announce EIP-6963 providers late", async () => {
+    vi.useFakeTimers();
+    try {
+      const okx = { request: vi.fn() };
+      const rabby = { request: vi.fn() };
+      const target = new EventTarget() as WalletEnvironment;
+      target.addEventListener?.("eip6963:requestProvider", () => {
+        setTimeout(() => {
+          target.dispatchEvent?.(
+            new CustomEvent("eip6963:announceProvider", {
+              detail: { info: { name: "OKX Wallet" }, provider: okx }
+            })
+          );
+        }, 250);
+        setTimeout(() => {
+          target.dispatchEvent?.(
+            new CustomEvent("eip6963:announceProvider", {
+              detail: { info: { name: "Rabby Wallet" }, provider: rabby }
+            })
+          );
+        }, 450);
+      });
+
+      const discovery = discoverInjectedWallets(target);
+      await vi.advanceTimersByTimeAsync(600);
+
+      await expect(discovery).resolves.toEqual([
+        expect.objectContaining({ label: "OKX Wallet", provider: okx }),
+        expect.objectContaining({ label: "Rabby Wallet", provider: rabby })
+      ]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("deduplicates wallet candidates by provider object", async () => {
     const provider = { request: vi.fn() };
 
