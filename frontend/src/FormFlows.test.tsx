@@ -68,9 +68,15 @@ describe("wallet-backed form payloads", () => {
   beforeEach(() => {
     vi.stubEnv("VITE_CONTRACT_ADDRESS", "0x1234567890123456789012345678901234567890");
     vi.stubGlobal("ethereum", {
-      request: vi.fn().mockResolvedValue(["0x2222222222222222222222222222222222222222"])
+      request: vi.fn(async ({ method }: { method: string }) => {
+        if (method === "eth_accounts" || method === "eth_requestAccounts") {
+          return ["0x2222222222222222222222222222222222222222"];
+        }
+        return undefined;
+      })
     });
     vi.clearAllMocks();
+    mocks.adapter.getWorkflow.mockResolvedValue(mocks.canonicalWorkflow);
   });
 
   afterEach(() => {
@@ -89,6 +95,7 @@ describe("wallet-backed form payloads", () => {
     const objective = screen.getByRole("textbox", { name: "Workflow objective" });
     await user.clear(objective);
     await user.type(objective, "Settle the edited workflow objective");
+    await screen.findByRole("button", { name: "0x2222...2222" });
     await user.click(screen.getByRole("button", { name: "Submit workflow transaction" }));
 
     await waitFor(() =>
@@ -110,6 +117,7 @@ describe("wallet-backed form payloads", () => {
       </MemoryRouter>
     );
 
+    await screen.findByRole("button", { name: "0x2222...2222" });
     await user.click(screen.getByRole("button", { name: "Submit workflow transaction" }));
 
     expect(await screen.findByText("Awaiting wallet")).toBeInTheDocument();
@@ -134,6 +142,7 @@ describe("wallet-backed form payloads", () => {
       digest,
       "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
     );
+    await screen.findByRole("button", { name: "0x2222...2222" });
     await user.click(screen.getByRole("button", { name: "Submit evidence transaction" }));
 
     await waitFor(() =>
@@ -147,7 +156,7 @@ describe("wallet-backed form payloads", () => {
   });
 
   it("adds the sponsor's typed provider step to a canonical draft", async () => {
-    mocks.adapter.getWorkflow.mockResolvedValueOnce({
+    mocks.adapter.getWorkflow.mockResolvedValue({
       ...mocks.canonicalWorkflow,
       role: "sponsor",
       status: "DRAFT",
@@ -175,6 +184,7 @@ describe("wallet-backed form payloads", () => {
     const feeWeight = screen.getByRole("spinbutton", { name: "Fee weight" });
     await user.clear(feeWeight);
     await user.type(feeWeight, "2");
+    await screen.findByRole("button", { name: "0x2222...2222" });
     await user.click(screen.getByRole("button", { name: "Add provider step" }));
 
     await waitFor(() =>
@@ -190,7 +200,7 @@ describe("wallet-backed form payloads", () => {
   });
 
   it("activates a configured canonical draft", async () => {
-    mocks.adapter.getWorkflow.mockResolvedValueOnce({
+    mocks.adapter.getWorkflow.mockResolvedValue({
       ...mocks.canonicalWorkflow,
       role: "sponsor",
       status: "DRAFT"
@@ -203,6 +213,7 @@ describe("wallet-backed form payloads", () => {
     );
 
     const activate = await screen.findByRole("button", { name: "Activate workflow" });
+    await screen.findByRole("button", { name: "0x2222...2222" });
     expect(activate).toBeEnabled();
     await user.click(activate);
 

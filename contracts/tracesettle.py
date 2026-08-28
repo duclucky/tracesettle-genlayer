@@ -7,6 +7,8 @@ import json
 
 
 GEN = 10 ** 18
+MAX_STEPS = 6
+MAX_DEPENDENCIES = 3
 
 
 @gl.evm.contract_interface
@@ -98,6 +100,36 @@ class TraceSettleContract(gl.Contract):
             return DynArray[str]()
         return workflow.step_ids.split(",")
 
+    def _dependency_ids(self, dependencies: str) -> DynArray[str]:
+        if dependencies == "" or dependencies == "none":
+            return DynArray[str]()
+        return dependencies.split(",")
+
+    def _normalize_dependencies(self, dependencies: str) -> str:
+        if dependencies == "" or dependencies == "none":
+            return ""
+        return dependencies
+
+    def _validate_dependencies(
+        self, workflow: WorkflowRecord, step_id: str, dependencies: str
+    ) -> None:
+        dep_ids = self._dependency_ids(dependencies)
+        dep_count = u256(0)
+        seen = ""
+        for dep_id in dep_ids:
+            if dep_id == "":
+                raise gl.vm.UserError("unknown dependency")
+            if dep_id == step_id:
+                raise gl.vm.UserError("cycle")
+            if not self._step_id_exists(workflow, dep_id):
+                raise gl.vm.UserError("unknown dependency")
+            if self._contains_id(seen, dep_id):
+                raise gl.vm.UserError("duplicate dependency")
+            seen = dep_id if seen == "" else seen + "," + dep_id
+            dep_count = dep_count + u256(1)
+            if dep_count > MAX_DEPENDENCIES:
+                raise gl.vm.UserError("too many dependencies")
+
     def _fee(self, workflow: WorkflowRecord, step: StepRecord) -> bigint:
         return workflow.pool * step.fee_weight // workflow.total_fee_weight
 
@@ -113,6 +145,14 @@ class TraceSettleContract(gl.Contract):
         ids = self._step_ids(workflow)
         for candidate_id in ids:
             if candidate_id == step_id:
+                return True
+        return False
+
+    def _contains_id(self, ids: str, wanted: str) -> bool:
+        if ids == "":
+            return False
+        for candidate_id in ids.split(","):
+            if candidate_id == wanted:
                 return True
         return False
 
@@ -185,7 +225,7 @@ class TraceSettleContract(gl.Contract):
 
     def _is_directly_blocked(self, workflow_id: str, fault_step_id: str, candidate_id: str) -> bool:
         candidate = self.steps[self._step_key(workflow_id, candidate_id)]
-        deps = candidate.dependencies.split(",") if candidate.dependencies != "" else DynArray[str]()
+        deps = self._dependency_ids(candidate.dependencies)
         for dep in deps:
             if dep == fault_step_id:
                 return True
@@ -295,10 +335,17 @@ class TraceSettleContract(gl.Contract):
             raise gl.vm.UserError("duplicate step")
         if fee_weight == 0:
             raise gl.vm.UserError("zero fee weight")
+        step_count = u256(0)
+        for _existing_step_id in self._step_ids(workflow):
+            step_count = step_count + u256(1)
+        if step_count >= MAX_STEPS:
+            raise gl.vm.UserError("too many steps")
+        self._validate_dependencies(workflow, step_id, dependencies)
+        normalized_dependencies = self._normalize_dependencies(dependencies)
         self.steps[key] = StepRecord(
             provider=provider,
             promise=promise,
-            dependencies=dependencies,
+            dependencies=normalized_dependencies,
             fee_weight=fee_weight,
             bond=bigint(0),
             accepted=False,

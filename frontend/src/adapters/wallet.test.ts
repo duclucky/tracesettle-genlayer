@@ -5,6 +5,7 @@ import {
   detectInjectedWallet,
   discoverAuthorizedWallet,
   discoverInjectedWallet,
+  discoverInjectedWallets,
   ensureGenLayerEvmNetwork,
   readAuthorizedWallet,
   shortenAddress,
@@ -61,6 +62,36 @@ describe("wallet adapter", () => {
       provider,
       label: "Browser wallet available"
     });
+  });
+
+  it("discovers multiple selectable EVM wallet candidates", async () => {
+    const okx = { request: vi.fn() };
+    const rabby = { request: vi.fn() };
+    const target = new EventTarget() as WalletEnvironment;
+    target.rabby = rabby;
+    target.addEventListener?.("eip6963:requestProvider", () => {
+      target.dispatchEvent?.(
+        new CustomEvent("eip6963:announceProvider", {
+          detail: { info: { name: "OKX Wallet" }, provider: okx }
+        })
+      );
+    });
+
+    await expect(discoverInjectedWallets(target, 0)).resolves.toEqual([
+      expect.objectContaining({ label: "OKX Wallet", provider: okx }),
+      expect.objectContaining({ label: "Rabby", provider: rabby })
+    ]);
+  });
+
+  it("deduplicates wallet candidates by provider object", async () => {
+    const provider = { request: vi.fn() };
+
+    await expect(
+      discoverInjectedWallets({
+        ethereum: { providers: [provider, provider] },
+        okxwallet: { ethereum: provider }
+      }, 0)
+    ).resolves.toHaveLength(1);
   });
 
   it("uses a wallet-specific nested EIP-1193 provider", async () => {

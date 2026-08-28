@@ -1,14 +1,12 @@
 import { useState } from "react";
 import { resolveRuntimeConfig } from "../adapters/runtimeConfig";
 import {
-  connectInjectedWallet,
-  discoverInjectedWallet,
   ensureGenLayerEvmNetwork,
-  type WalletEnvironment,
   walletRequestErrorMessage
 } from "../adapters/wallet";
 import type { TraceSettleAdapter, TransactionResult } from "../domain/types";
 import { TransactionState, type TransactionStage } from "./TransactionState";
+import { useWalletSession } from "./WalletSessionContext";
 
 interface LiveTraceSettleActionProps {
   children: string;
@@ -35,46 +33,43 @@ export function LiveTraceSettleAction({
   action,
   onCanonicalReload
 }: LiveTraceSettleActionProps) {
+  const runtime = resolveRuntimeConfig(import.meta.env);
+  const { address, provider } = useWalletSession();
+  const needsConnectedWallet = runtime.mode === "live" && (!address || !provider);
   const [stage, setStage] = useState<TransactionStage>("idle");
-  const [message, setMessage] = useState<string>("No transaction has been signed from this control.");
+  const [message, setMessage] = useState<string>(
+    needsConnectedWallet
+      ? "Connect wallet before signing. No transaction has been submitted."
+      : "No transaction has been signed from this control."
+  );
   const busy = stage === "wallet" || stage === "submitted";
 
   async function runAction() {
-    const runtime = resolveRuntimeConfig(import.meta.env);
     if (runtime.mode !== "live" || !runtime.contractAddress) {
       setStage("failed");
       setMessage(`${runtime.reason}. Configure a deployed contract before signing.`);
       return;
     }
 
-    const detection = await discoverInjectedWallet(
-      typeof window === "undefined" ? {} : (window as unknown as WalletEnvironment)
-    );
-    if (!detection.provider) {
+    if (!address || !provider) {
       setStage("failed");
-      setMessage("No browser wallet detected. No transaction was submitted.");
+      setMessage("Connect wallet before signing. No transaction was submitted.");
       return;
     }
 
     try {
-      await ensureGenLayerEvmNetwork(detection.provider, runtime.evmRpcUrl);
-      const wallet = await connectInjectedWallet(detection.provider);
-      if (!wallet.address) {
-        setStage("failed");
-        setMessage("Wallet did not return an account. No transaction was submitted.");
-        return;
-      }
+      await ensureGenLayerEvmNetwork(provider, runtime.evmRpcUrl);
       setStage("wallet");
       setMessage("Approve or reject the request in your wallet. No transaction is claimed yet.");
       const { createGenLayerTraceSettleAdapter } = await import("../adapters/genlayerAdapter");
       const adapter = createGenLayerTraceSettleAdapter({
         address: runtime.contractAddress,
-        account: wallet.address,
-        provider: detection.provider,
+        account: address,
+        provider,
         genlayerRpcUrl: runtime.genlayerRpcUrl,
         evmRpcUrl: runtime.evmRpcUrl
       });
-      const result = await action(adapter, wallet.address);
+      const result = await action(adapter, address);
       setStage(classifyResult(result));
       setMessage(result.message);
       if (result.finalized) {
@@ -92,7 +87,7 @@ export function LiveTraceSettleAction({
         className={className}
         type="button"
         onClick={runAction}
-        disabled={disabled || busy}
+        disabled={disabled || busy || needsConnectedWallet}
       >
         {children}
       </button>

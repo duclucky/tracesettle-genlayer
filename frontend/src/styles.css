@@ -136,6 +136,7 @@ summary:focus-visible {
 }
 
 .wallet-status {
+  position: relative;
   min-height: 44px;
   display: flex;
   align-items: center;
@@ -146,6 +147,66 @@ summary:focus-visible {
   padding: 0 12px;
   color: var(--color-text-muted);
   font-size: 0.9rem;
+}
+
+.wallet-account {
+  position: relative;
+}
+
+.account-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 30;
+  width: 240px;
+  display: grid;
+  gap: 9px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  padding: 12px;
+  box-shadow: 0 18px 44px rgb(15 23 42 / 0.14);
+  color: var(--color-text-muted);
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  background: rgb(15 23 42 / 0.28);
+  padding: 16px;
+}
+
+.wallet-modal {
+  width: min(440px, 100%);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+  padding: 20px;
+  box-shadow: 0 24px 80px rgb(15 23 42 / 0.22);
+}
+
+.wallet-options {
+  display: grid;
+  gap: 10px;
+}
+
+.wallet-option {
+  min-height: 46px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  padding: 0 12px;
+  text-align: left;
+  font-weight: 750;
+}
+
+.wallet-option:hover {
+  border-color: var(--color-accent);
+  background: var(--color-surface-muted);
 }
 
 .link-button {

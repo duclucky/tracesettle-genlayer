@@ -3,12 +3,14 @@ import { resolveRuntimeConfig } from "../adapters/runtimeConfig";
 import {
   connectInjectedWallet,
   detectInjectedWallet,
-  discoverInjectedWallet,
+  discoverInjectedWallets,
   readAuthorizedWallet,
   shortenAddress,
+  type WalletCandidate,
   type WalletEnvironment,
   walletRequestErrorMessage
 } from "../adapters/wallet";
+import { useWalletSession } from "./WalletSessionContext";
 
 export function WalletStatus() {
   const runtime = resolveRuntimeConfig(import.meta.env);
@@ -17,52 +19,85 @@ export function WalletStatus() {
     []
   );
   const initialDetection = useMemo(() => detectInjectedWallet(environment), [environment]);
-  const [address, setAddress] = useState<`0x${string}` | undefined>();
+  const { address, label, setWalletSession, clearWalletSession } = useWalletSession();
+  const [candidates, setCandidates] = useState<WalletCandidate[]>([]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [statusMessage, setStatusMessage] = useState(initialDetection.label);
 
   useEffect(() => {
     let active = true;
-    void discoverInjectedWallet(environment).then(async (result) => {
+    void discoverInjectedWallets(environment).then(async (results) => {
       if (!active) {
         return;
       }
-      setStatusMessage(result.label);
-      if (!result.provider) {
+      setCandidates(results);
+      if (results.length === 0) {
+        setStatusMessage("No browser wallet detected");
         return;
       }
-      try {
-        const connection = await readAuthorizedWallet(result.provider);
-        if (!active || !connection.address) {
-          return;
-        }
-        setAddress(connection.address);
-        setStatusMessage("Wallet connected");
-      } catch {
-        if (active) {
-          setAddress(undefined);
+      setStatusMessage(`${results[0].label} available`);
+      for (const result of results) {
+        try {
+          const connection = await readAuthorizedWallet(result.provider);
+          if (!active) {
+            return;
+          }
+          if (connection.address) {
+            setWalletSession({
+              address: connection.address,
+              provider: result.provider,
+              label: result.label
+            });
+            setStatusMessage("Wallet connected");
+            return;
+          }
+        } catch {
+          if (!active) {
+            return;
+          }
         }
       }
     });
     return () => {
       active = false;
     };
-  }, [environment]);
+  }, [environment, setWalletSession]);
 
   async function connectWallet() {
-    const detection = await discoverInjectedWallet(environment);
-    setStatusMessage(detection.label);
-    if (!detection.provider) {
+    const results = await discoverInjectedWallets(environment);
+    setCandidates(results);
+    if (results.length === 0) {
+      setStatusMessage("No browser wallet detected");
       return;
     }
+    setStatusMessage(`${results.length} wallet${results.length === 1 ? "" : "s"} detected`);
+    setModalOpen(true);
+  }
+
+  async function selectWallet(candidate: WalletCandidate) {
     try {
-      const result = await connectInjectedWallet(detection.provider);
-      setAddress(result.address);
+      const result = await connectInjectedWallet(candidate.provider);
+      if (result.address) {
+        setWalletSession({
+          address: result.address,
+          provider: candidate.provider,
+          label: candidate.label
+        });
+      }
       setStatusMessage(
         result.status === "connected" ? "Wallet connected" : "Wallet did not return an account"
       );
+      setModalOpen(false);
     } catch (cause) {
       setStatusMessage(walletRequestErrorMessage(cause));
     }
+  }
+
+  function disconnectWallet() {
+    clearWalletSession();
+    setMenuOpen(false);
+    setStatusMessage("Wallet disconnected");
   }
 
   return (
@@ -70,7 +105,26 @@ export function WalletStatus() {
       <span className="status-dot" aria-hidden="true" />
       <span>Studionet</span>
       {address ? (
-        <span className="mono">{shortenAddress(address)}</span>
+        <span className="wallet-account">
+          <button
+            className="link-button mono"
+            type="button"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((value) => !value)}
+          >
+            {shortenAddress(address)}
+          </button>
+          {menuOpen && (
+            <div className="account-menu">
+              <span className="mono">{shortenAddress(address)}</span>
+              <span>{label ? `${label} selected` : "Wallet selected"}</span>
+              <span>GenLayer EVM ready for writes</span>
+              <button className="button secondary" type="button" onClick={disconnectWallet}>
+                Disconnect wallet
+              </button>
+            </div>
+          )}
+        </span>
       ) : (
         <button className="link-button" type="button" onClick={connectWallet}>
           Connect wallet
@@ -78,6 +132,45 @@ export function WalletStatus() {
       )}
       {runtime.mode === "preview" && <span>{runtime.reason}</span>}
       <span aria-live="polite">{statusMessage}</span>
+      {modalOpen && (
+        <div className="modal-backdrop">
+          <section
+            className="wallet-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="wallet-modal-title"
+          >
+            <div className="stack">
+              <div>
+                <h2 id="wallet-modal-title">Connect wallet</h2>
+                <p className="muted">Select an EVM wallet detected in this browser.</p>
+              </div>
+              <div className="wallet-options">
+                {candidates.map((candidate) => (
+                  <button
+                    className="wallet-option"
+                    type="button"
+                    key={candidate.id}
+                    onClick={() => void selectWallet(candidate)}
+                  >
+                    {candidate.label}
+                  </button>
+                ))}
+              </div>
+              <p className="muted">No wallet? Install or unlock an EVM wallet extension.</p>
+              <div className="actions">
+                <button
+                  className="button secondary"
+                  type="button"
+                  onClick={() => setModalOpen(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }

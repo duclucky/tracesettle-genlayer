@@ -83,6 +83,17 @@ def test_review_path_verifies_artifact_provenance_before_settlement_prompt():
     assert "_objective_hash" in text
 
 
+def test_contract_enforces_dag_and_step_bounds_in_source():
+    text = source()
+    assert "MAX_STEPS = 6" in text
+    assert "MAX_DEPENDENCIES = 3" in text
+    assert "too many steps" in text
+    assert "too many dependencies" in text
+    assert "unknown dependency" in text
+    assert "cycle" in text
+    assert "_normalize_dependencies" in text
+
+
 def test_nondet_leader_does_not_read_contract_storage():
     text = source()
     leader_start = text.index("        def leader_fn():")

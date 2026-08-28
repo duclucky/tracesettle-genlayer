@@ -3,6 +3,9 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppRoutes } from "./App";
+import type { WalletEnvironment } from "./adapters/wallet";
+
+let walletAnnouncementController: AbortController | undefined;
 
 const routeHeadings = [
   ["/", "Settle the failed workflow"],
@@ -21,6 +24,8 @@ describe("TraceSettle route map", () => {
   });
 
   afterEach(() => {
+    walletAnnouncementController?.abort();
+    walletAnnouncementController = undefined;
     vi.unstubAllEnvs();
     vi.unstubAllGlobals();
   });
@@ -80,6 +85,77 @@ describe("TraceSettle route map", () => {
     );
   });
 
+  it("opens wallet selection and connects only the chosen provider", async () => {
+    const okxRequest = vi.fn(async ({ method }: { method: string }) => {
+      if (method === "eth_accounts") {
+        return [];
+      }
+      if (method === "eth_requestAccounts") {
+        return ["0x1111111111111111111111111111111111111111"];
+      }
+      return undefined;
+    });
+    const rabbyRequest = vi.fn(async ({ method }: { method: string }) => {
+      if (method === "eth_accounts") {
+        return [];
+      }
+      if (method === "eth_requestAccounts") {
+        return ["0x2222222222222222222222222222222222222222"];
+      }
+      return undefined;
+    });
+    const okxProvider = { request: okxRequest };
+    const rabbyProvider = { request: rabbyRequest };
+    walletAnnouncementController = new AbortController();
+    window.addEventListener("eip6963:requestProvider", () => {
+      window.dispatchEvent(
+        new CustomEvent("eip6963:announceProvider", {
+          detail: { info: { name: "OKX Wallet" }, provider: okxProvider }
+        })
+      );
+    }, { signal: walletAnnouncementController.signal });
+    vi.stubGlobal("rabby", rabbyProvider);
+
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <AppRoutes />
+      </MemoryRouter>
+    );
+
+    await user.click(screen.getByRole("button", { name: "Connect wallet" }));
+
+    expect(await screen.findByRole("dialog", { name: "Connect wallet" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Rabby" }));
+
+    expect(rabbyRequest).toHaveBeenCalledWith({ method: "eth_requestAccounts" });
+    expect(okxRequest).not.toHaveBeenCalledWith({ method: "eth_requestAccounts" });
+    expect(await screen.findByRole("button", { name: "0x2222...2222" })).toBeInTheDocument();
+  });
+
+  it("disconnects the visible wallet from the account menu", async () => {
+    const request = vi.fn(async ({ method }: { method: string }) => {
+      if (method === "eth_accounts") {
+        return ["0xC495ef51618D03267A1f227aFe5b27B38c748272"];
+      }
+      return undefined;
+    });
+    vi.stubGlobal("ethereum", { request });
+
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <AppRoutes />
+      </MemoryRouter>
+    );
+
+    await user.click(await screen.findByRole("button", { name: "0xC495...8272" }));
+    await user.click(screen.getByRole("button", { name: "Disconnect wallet" }));
+
+    expect(screen.getByRole("button", { name: "Connect wallet" })).toBeInTheDocument();
+    expect(screen.getByText("Wallet disconnected")).toHaveAttribute("aria-live", "polite");
+  });
+
   it("shows a plain provider rejection in the single wallet status", async () => {
     vi.stubGlobal("ethereum", {
       request: vi.fn().mockRejectedValue({
@@ -95,6 +171,7 @@ describe("TraceSettle route map", () => {
     );
 
     await user.click(screen.getByRole("button", { name: "Connect wallet" }));
+    await user.click(await screen.findByRole("button", { name: "Browser wallet" }));
 
     expect(await screen.findByText("OKX Wallet is locked")).toHaveAttribute(
       "aria-live",
@@ -125,7 +202,7 @@ describe("TraceSettle route map", () => {
     expect(request.mock.calls[0][0]).toEqual({ method: "eth_accounts" });
   });
 
-  it("filters workflow rows and exposes the active filter state", async () => {
+  it("shows all canonical workflow rows by default and exposes filter state", async () => {
     const user = userEvent.setup();
     render(
       <MemoryRouter initialEntries={["/workflows"]}>
@@ -133,11 +210,20 @@ describe("TraceSettle route map", () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole("button", { name: "Active" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "All" })).toHaveAttribute(
       "aria-pressed",
       "true"
     );
-    expect(screen.queryByText("Settle a DAO scheduler workflow after one provider introduced a material fault.")).not.toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Produce a verified travel-planning workflow with itinerary, reservation handoff, and cancellation notes."
+      )
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Settle a DAO scheduler workflow after one provider introduced a material fault."
+      )
+    ).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Settled" }));
 
@@ -299,24 +385,21 @@ describe("TraceSettle route map", () => {
     expect(screen.getByRole("button", { name: "Submit withdrawal" })).toBeDisabled();
   });
 
-  it("surfaces a plain wallet rejection from a write control", async () => {
+  it("disables live write controls until a wallet is selected", async () => {
     vi.stubEnv("VITE_CONTRACT_ADDRESS", "0x1234567890123456789012345678901234567890");
     vi.stubGlobal("ethereum", {
-      request: vi.fn().mockRejectedValue({
-        code: 4001,
-        message: "Create workflow wallet request denied"
-      })
+      request: vi.fn().mockResolvedValue([])
     });
-    const user = userEvent.setup();
     render(
       <MemoryRouter initialEntries={["/workflows/new"]}>
         <AppRoutes />
       </MemoryRouter>
     );
 
-    await user.click(screen.getByRole("button", { name: "Submit workflow transaction" }));
-
-    expect(await screen.findByText("Create workflow wallet request denied")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Submit workflow transaction" })).toBeDisabled();
+    expect(
+      screen.getByText("Connect wallet before signing. No transaction has been submitted.")
+    ).toBeInTheDocument();
   });
 
   it("blocks live actions honestly until a contract address is configured", async () => {

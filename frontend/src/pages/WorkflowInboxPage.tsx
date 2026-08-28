@@ -6,10 +6,11 @@ import { WorkflowList } from "../components/WorkflowList";
 import { workflows } from "../domain/fixtures";
 import type { WorkflowStatus, WorkflowSummary } from "../domain/types";
 
-const filters = ["Active", "Needs action", "Retryable", "Settled", "Cancelled"] as const;
+const filters = ["All", "Active", "Needs action", "Retryable", "Settled", "Cancelled"] as const;
 type WorkflowFilter = (typeof filters)[number];
 
 const filterStatuses: Record<WorkflowFilter, WorkflowStatus[]> = {
+  All: ["DRAFT", "OPEN", "EVIDENCE_LOCKED", "REVIEW_PENDING", "RETRYABLE", "SETTLED", "CANCELLED"],
   Active: ["DRAFT", "OPEN", "EVIDENCE_LOCKED", "REVIEW_PENDING", "RETRYABLE"],
   "Needs action": ["DRAFT", "OPEN", "EVIDENCE_LOCKED", "RETRYABLE"],
   Retryable: ["RETRYABLE"],
@@ -22,7 +23,7 @@ export function WorkflowInboxPage() {
   const [items, setItems] = useState<WorkflowSummary[]>(
     runtime.mode === "live" ? [] : workflows
   );
-  const [activeFilter, setActiveFilter] = useState<WorkflowFilter>("Active");
+  const [activeFilter, setActiveFilter] = useState<WorkflowFilter>("All");
   const [readState, setReadState] = useState(
     runtime.mode === "live" ? "Loading canonical contract workflows..." : runtime.reason
   );
