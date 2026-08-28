@@ -12,6 +12,34 @@ import {
 } from "../adapters/wallet";
 import { useWalletSession } from "./WalletSessionContext";
 
+const disconnectSuppressionKey = "tracesettle.wallet.disconnect-suppressed";
+
+function readDisconnectSuppression() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+  try {
+    return window.sessionStorage.getItem(disconnectSuppressionKey) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function writeDisconnectSuppression(value: boolean) {
+  if (typeof window === "undefined") {
+    return;
+  }
+  try {
+    if (value) {
+      window.sessionStorage.setItem(disconnectSuppressionKey, "true");
+    } else {
+      window.sessionStorage.removeItem(disconnectSuppressionKey);
+    }
+  } catch {
+    return;
+  }
+}
+
 export function WalletStatus() {
   const runtime = resolveRuntimeConfig(import.meta.env);
   const environment = useMemo<WalletEnvironment>(
@@ -23,6 +51,7 @@ export function WalletStatus() {
   const [candidates, setCandidates] = useState<WalletCandidate[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [disconnectSuppressed, setDisconnectSuppressed] = useState(readDisconnectSuppression);
   const [statusMessage, setStatusMessage] = useState(initialDetection.label);
 
   useEffect(() => {
@@ -37,6 +66,9 @@ export function WalletStatus() {
         return;
       }
       setStatusMessage(`${results[0].label} available`);
+      if (disconnectSuppressed) {
+        return;
+      }
       for (const result of results) {
         try {
           const connection = await readAuthorizedWallet(result.provider);
@@ -62,9 +94,11 @@ export function WalletStatus() {
     return () => {
       active = false;
     };
-  }, [environment, setWalletSession]);
+  }, [disconnectSuppressed, environment, setWalletSession]);
 
   async function connectWallet() {
+    setDisconnectSuppressed(false);
+    writeDisconnectSuppression(false);
     const results = await discoverInjectedWallets(environment);
     setCandidates(results);
     if (results.length === 0) {
@@ -95,6 +129,8 @@ export function WalletStatus() {
   }
 
   function disconnectWallet() {
+    setDisconnectSuppressed(true);
+    writeDisconnectSuppression(true);
     clearWalletSession();
     setMenuOpen(false);
     setStatusMessage("Wallet disconnected");

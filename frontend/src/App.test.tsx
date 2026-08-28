@@ -26,6 +26,7 @@ describe("TraceSettle route map", () => {
   afterEach(() => {
     walletAnnouncementController?.abort();
     walletAnnouncementController = undefined;
+    window.sessionStorage.clear();
     vi.unstubAllEnvs();
     vi.unstubAllGlobals();
   });
@@ -58,6 +59,45 @@ describe("TraceSettle route map", () => {
     expect(within(navigation).getByRole("link", { name: "Credits" })).toBeInTheDocument();
   });
 
+  it("exposes primary navigation directly in the topbar", () => {
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <AppRoutes />
+      </MemoryRouter>
+    );
+
+    const navigation = screen.getByRole("navigation", { name: "Primary" });
+    expect(within(navigation).getByRole("link", { name: "Home" })).toHaveAttribute("href", "/");
+    expect(within(navigation).getByRole("link", { name: "Workflows" })).toHaveAttribute(
+      "href",
+      "/workflows"
+    );
+    expect(within(navigation).getByRole("link", { name: "Credits" })).toHaveAttribute(
+      "href",
+      "/credits"
+    );
+    expect(within(navigation).getByRole("link", { name: "Settings" })).toHaveAttribute(
+      "href",
+      "/settings"
+    );
+    expect(within(navigation).getByRole("link", { name: "Help" })).toHaveAttribute(
+      "href",
+      "/help"
+    );
+  });
+
+  it("renders the refreshed TraceSettle logo mark", () => {
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <AppRoutes />
+      </MemoryRouter>
+    );
+
+    const brand = screen.getByRole("link", { name: "TraceSettle home" });
+    expect(within(brand).getByTestId("tracesettle-logo-mark")).toBeInTheDocument();
+    expect(within(brand).getByText("TraceSettle")).toBeInTheDocument();
+  });
+
   it("opens the Terranova navigation drawer and preserves route links", async () => {
     const user = userEvent.setup();
     render(
@@ -67,8 +107,9 @@ describe("TraceSettle route map", () => {
     );
 
     await user.click(screen.getByRole("button", { name: "Menu" }));
-    expect(screen.getByRole("dialog", { name: "Primary navigation" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Workflows" })).toBeInTheDocument();
+    const navigation = screen.getByRole("dialog", { name: "Primary navigation" });
+    expect(navigation).toBeInTheDocument();
+    expect(within(navigation).getByRole("link", { name: "Workflows" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Close menu" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Close menu" }));
@@ -263,6 +304,37 @@ describe("TraceSettle route map", () => {
 
     expect(screen.getByRole("button", { name: "Connect wallet" })).toBeInTheDocument();
     expect(screen.getByText("Wallet disconnected")).toHaveAttribute("aria-live", "polite");
+  });
+
+  it("does not auto-restore after explicit disconnect even when the provider remains authorized", async () => {
+    const request = vi.fn(async ({ method }: { method: string }) => {
+      if (method === "eth_accounts") {
+        return ["0xC495ef51618D03267A1f227aFe5b27B38c748272"];
+      }
+      return undefined;
+    });
+    vi.stubGlobal("ethereum", { request });
+
+    const user = userEvent.setup();
+    const app = render(
+      <MemoryRouter initialEntries={["/"]}>
+        <AppRoutes />
+      </MemoryRouter>
+    );
+
+    await user.click(await screen.findByRole("button", { name: "0xC495...8272" }));
+    await user.click(screen.getByRole("button", { name: "Disconnect wallet" }));
+
+    app.unmount();
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <AppRoutes />
+      </MemoryRouter>
+    );
+
+    await new Promise((resolve) => setTimeout(resolve, 160));
+    expect(await screen.findByRole("button", { name: "Connect wallet" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "0xC495...8272" })).not.toBeInTheDocument();
   });
 
   it("shows a plain provider rejection in the single wallet status", async () => {

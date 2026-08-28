@@ -5,7 +5,6 @@ import {
   House,
   Lifebuoy,
   List,
-  Scales,
   X
 } from "@phosphor-icons/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -23,6 +22,25 @@ const navItems = [
   { to: "/settings", label: "Settings", icon: GearSix },
   { to: "/help", label: "Help", icon: Lifebuoy }
 ];
+
+function TraceSettleLogoMark() {
+  return (
+    <svg
+      className="logo-mark-svg"
+      data-testid="tracesettle-logo-mark"
+      viewBox="0 0 48 48"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <circle className="logo-mark-svg__field" cx="24" cy="24" r="23" />
+      <path className="logo-mark-svg__ledger" d="M14 18h20M14 24h16M14 30h20" />
+      <path className="logo-mark-svg__trace" d="M15 34 22 13l5 16 4-9 3 14" />
+      <circle className="logo-mark-svg__node" cx="22" cy="13" r="2.5" />
+      <circle className="logo-mark-svg__node" cx="27" cy="29" r="2.5" />
+      <circle className="logo-mark-svg__node" cx="34" cy="34" r="2.5" />
+    </svg>
+  );
+}
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -166,10 +184,26 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="topbar-inner">
             <NavLink className="brand" to="/" aria-label="TraceSettle home">
               <span className="brand-mark" aria-hidden="true">
-                <Scales size={20} weight="bold" />
+                <TraceSettleLogoMark />
               </span>
               <span>TraceSettle</span>
             </NavLink>
+            <nav className="primary-nav" aria-label="Primary">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <NavLink
+                    className="primary-nav__link"
+                    key={item.to}
+                    to={item.to}
+                    end={item.to === "/"}
+                  >
+                    <Icon size={16} weight="bold" aria-hidden="true" />
+                    <span>{item.label}</span>
+                  </NavLink>
+                );
+              })}
+            </nav>
             <button
               className="menu-trigger"
               type="button"
