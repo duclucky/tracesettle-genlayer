@@ -146,6 +146,11 @@ function isFinalityTimeout(cause: unknown): boolean {
   );
 }
 
+function isReceiptNotIndexedYet(cause: unknown): boolean {
+  const message = cause instanceof Error ? cause.message : String(cause ?? "");
+  return /Transaction 0x[a-fA-F0-9]+ not found/.test(message);
+}
+
 async function waitForFinality(
   client: GenLayerClientLike,
   hash: `0x${string}` | string
@@ -164,6 +169,15 @@ async function waitForFinality(
         finalized: false,
         message:
           "Transaction submitted; finality was not confirmed before the browser timeout. Reload canonical contract state before relying on it."
+      };
+    }
+    if (isReceiptNotIndexedYet(cause)) {
+      return {
+        id: hash,
+        submitted: true,
+        finalized: false,
+        message:
+          "Transaction submitted; the receipt was not indexed yet. Reload canonical contract state before relying on it."
       };
     }
     throw cause;

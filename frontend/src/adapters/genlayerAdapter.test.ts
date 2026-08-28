@@ -246,6 +246,35 @@ describe("GenLayer TraceSettle adapter", () => {
     });
   });
 
+  it("does not mark a submitted transaction failed when the receipt is not indexed yet", async () => {
+    vi.spyOn(Date, "now").mockReturnValue(12345);
+    const client = createClientStub();
+    client.writeContract.mockResolvedValue("0xabcdef");
+    client.waitForTransactionReceipt.mockRejectedValue(
+      new Error(
+        "Requested resource not found. Details: Transaction 0xabcdef not found Version: viem@2.55.13"
+      )
+    );
+    const adapter = createGenLayerTraceSettleAdapter({
+      address: "0x1234567890123456789012345678901234567890",
+      account: "0x2222222222222222222222222222222222222222",
+      client
+    });
+
+    await expect(
+      adapter.createWorkflow({
+        objective: "Ship a bounded workflow",
+        poolGen: 2
+      })
+    ).resolves.toEqual({
+      id: "0xabcdef",
+      submitted: true,
+      finalized: false,
+      message:
+        "Transaction submitted; the receipt was not indexed yet. Reload canonical contract state before relying on it. Canonical workflow ID: trace-9ix."
+    });
+  });
+
   it("uses 1 GEN for provider bond acceptance", async () => {
     const client = createClientStub();
     client.writeContract.mockResolvedValue("0x123");
