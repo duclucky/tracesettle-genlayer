@@ -6,7 +6,7 @@ describe("runtime config", () => {
     expect(resolveRuntimeConfig({})).toEqual({
       contractAddress: undefined,
       genlayerRpcUrl: "/genlayer-rpc",
-      evmRpcUrl: "https://rpc.testnet-chain.genlayer.com",
+      evmRpcUrl: "https://studio.genlayer.com/api",
       mode: "preview",
       reason: "Missing VITE_CONTRACT_ADDRESS"
     });
@@ -20,20 +20,20 @@ describe("runtime config", () => {
     ).toEqual({
       contractAddress: "0x1234567890123456789012345678901234567890",
       genlayerRpcUrl: "/genlayer-rpc",
-      evmRpcUrl: "https://rpc.testnet-chain.genlayer.com",
+      evmRpcUrl: "https://studio.genlayer.com/api",
       mode: "live",
       reason: undefined
     });
   });
 
-  it("defaults local browser reads through a same-origin GenLayer RPC proxy and wallet traffic through the EVM RPC", () => {
+  it("defaults local browser reads through a same-origin proxy and wallet traffic through the same Studionet RPC family", () => {
     expect(
       resolveRuntimeConfig({
         VITE_CONTRACT_ADDRESS: "0x1234567890123456789012345678901234567890"
       })
     ).toMatchObject({
       genlayerRpcUrl: "/genlayer-rpc",
-      evmRpcUrl: "https://rpc.testnet-chain.genlayer.com"
+      evmRpcUrl: "https://studio.genlayer.com/api"
     });
   });
 
@@ -54,7 +54,7 @@ describe("runtime config", () => {
     expect(resolveRuntimeConfig({ VITE_CONTRACT_ADDRESS: "trace-1001" })).toEqual({
       contractAddress: undefined,
       genlayerRpcUrl: "/genlayer-rpc",
-      evmRpcUrl: "https://rpc.testnet-chain.genlayer.com",
+      evmRpcUrl: "https://studio.genlayer.com/api",
       mode: "preview",
       reason: "Invalid VITE_CONTRACT_ADDRESS"
     });

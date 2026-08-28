@@ -53,14 +53,13 @@ instead of treating wallet submission as success.
 - Provider credit: `4 GEN` before withdrawal, `0 GEN` after withdrawal
 - Browser-wallet workflow: prior evidence on superseded deployment; not claimed
   as remediated-contract browser write proof.
-- Current local check: 1 contract, 20 direct tests, 3 deployment/config tests,
-  71 frontend tests, production build passing
+- Current local check: 1 contract, 20 direct tests, 4 deployment/config tests,
+  84 frontend tests, production build passing
 - Provenance remediation: deployed contract rejects missing or mismatched
   artifact provenance before settlement.
-- Reviewer remediation: frontend wallet writes now switch/add GenLayer EVM
-  chain `0x107d` with RPC `https://rpc.testnet-chain.genlayer.com`; GenLayer
-  IC reads use same-origin `/genlayer-rpc` proxy to avoid browser CORS on
-  `https://studio.genlayer.com/api`.
+- Reviewer remediation: frontend wallet writes now switch/add Studionet chain
+  `0xf22f` with RPC `https://studio.genlayer.com/api`; GenLayer IC reads use
+  same-origin `/genlayer-rpc` proxy to avoid browser CORS on direct app calls.
 
 See:
 
@@ -113,7 +112,7 @@ The frontend reads:
 
 - `VITE_CONTRACT_ADDRESS`
 - `VITE_GENLAYER_RPC_URL` (default `/genlayer-rpc`)
-- `VITE_EVM_RPC_URL` (default `https://rpc.testnet-chain.genlayer.com`)
+- `VITE_EVM_RPC_URL` (default `https://studio.genlayer.com/api`)
 
 Local development can copy `frontend/.env.example` to `frontend/.env`. Vite
 proxies `/genlayer-rpc` to `https://studio.genlayer.com/api`; production Vercel

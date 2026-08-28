@@ -19,12 +19,12 @@ describe("GenLayer TraceSettle adapter", () => {
     expect(
       createTraceSettleChain({
         genlayerRpcUrl: "/genlayer-rpc",
-        evmRpcUrl: "https://rpc.testnet-chain.genlayer.com"
+        evmRpcUrl: "https://studio.genlayer.com/api"
       })
     ).toMatchObject({
       id: 61999,
       rpcUrls: { default: { http: ["/genlayer-rpc"] } },
-      evmRpcUrls: { default: { http: ["https://rpc.testnet-chain.genlayer.com"] } }
+      evmRpcUrls: { default: { http: ["https://studio.genlayer.com/api"] } }
     });
   });
 
@@ -311,10 +311,11 @@ describe("GenLayer TraceSettle adapter", () => {
     });
   });
 
-  it("does not poll GenLayer finality with a browser-wallet Studio EVM submit hash", async () => {
+  it("polls GenLayer finality after a browser-wallet Studio submit hash before claiming completion", async () => {
     const client = createClientStub();
     const provider = { request: vi.fn() };
     client.writeContract.mockResolvedValue("0xevmhash");
+    client.waitForTransactionReceipt.mockResolvedValue({ statusName: "FINALIZED" });
     const adapter = createGenLayerTraceSettleAdapter({
       address: "0x1234567890123456789012345678901234567890",
       account: "0x2222222222222222222222222222222222222222",
@@ -325,12 +326,15 @@ describe("GenLayer TraceSettle adapter", () => {
     await expect(adapter.lockEvidence("trace-1")).resolves.toEqual({
       id: "0xevmhash",
       submitted: true,
-      finalized: false,
-      message:
-        "Wallet transaction submitted to GenLayer EVM; reload canonical contract state after indexing/finality before relying on it."
+      finalized: true,
+      message: "Transaction finalized; reload canonical contract state."
     });
-    expect(client.waitForTransactionReceipt).not.toHaveBeenCalled();
-    expect(client.finalizeTransaction).not.toHaveBeenCalled();
+    expect(client.waitForTransactionReceipt).toHaveBeenCalledWith({
+      hash: "0xevmhash",
+      status: "ACCEPTED",
+      interval: 7000,
+      retries: 30
+    });
   });
 
   it("uses 1 GEN for provider bond acceptance", async () => {

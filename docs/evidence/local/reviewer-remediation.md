@@ -11,9 +11,9 @@ Captured: 2026-08-17T20:26:46+07:00
 
 - Frontend separates endpoints:
   - GenLayer IC reads: `VITE_GENLAYER_RPC_URL`, default `/genlayer-rpc`.
-  - EVM wallet transactions: `VITE_EVM_RPC_URL`, default `https://rpc.testnet-chain.genlayer.com`.
+  - EVM wallet transactions for the active Studio deployment: `VITE_EVM_RPC_URL`, default `https://studio.genlayer.com/api`.
 - Vite and Vercel proxy `/genlayer-rpc` to `https://studio.genlayer.com/api`, avoiding browser CORS on direct local frontend calls.
-- Wallet writes now request GenLayer EVM chain `0x107d` and add it with native currency `GEN` if the wallet does not know it.
+- Wallet writes now request Studionet chain `0xf22f` and add it with native currency `GEN` if the wallet does not know it.
 - Settlement now validates `coverage == COMPLETE`, exact class coverage, exact root-cause-to-`MATERIAL_FAULT` match, downstream-blocked dependency relation, and fee rounding residual before/while settling.
 
 ## Verification commands and real output
@@ -27,11 +27,11 @@ $env:PYTHONUTF8='1'; npm run check
 ✓ Validation passed
   Contract: TraceSettleContract
   Methods: 16 (6 view, 10 write)
-14 passed in 0.05s
+20 passed in 0.07s
 ✔ routes production GenLayer RPC proxy before SPA deep links
 Test Files  6 passed (6)
-Tests  59 passed (59)
-✓ built in 503ms
+Tests  84 passed (84)
+✓ built in 483ms
 ```
 
 ```powershell

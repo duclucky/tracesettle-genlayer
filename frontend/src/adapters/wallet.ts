@@ -434,7 +434,7 @@ export async function connectInjectedWallet(provider: Eip1193Provider): Promise<
 
 export async function ensureGenLayerEvmNetwork(
   provider: Eip1193Provider,
-  rpcUrl = "https://rpc.testnet-chain.genlayer.com"
+  rpcUrl = "https://studio.genlayer.com/api"
 ): Promise<void> {
   try {
     await provider.request({
@@ -450,10 +450,10 @@ export async function ensureGenLayerEvmNetwork(
       params: [
         {
           chainId: genLayerEvmChainId,
-          chainName: "GenLayer EVM",
+          chainName: "GenLayer Studionet",
           nativeCurrency: { name: "GEN", symbol: "GEN", decimals: 18 },
           rpcUrls: [rpcUrl],
-          blockExplorerUrls: ["https://explorer.testnet-chain.genlayer.com/"]
+          blockExplorerUrls: ["https://explorer-studio.genlayer.com/"]
         }
       ]
     });

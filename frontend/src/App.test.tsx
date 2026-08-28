@@ -405,7 +405,7 @@ describe("TraceSettle route map", () => {
         return ["0xC495ef51618D03267A1f227aFe5b27B38c748272"];
       }
       if (method === "wallet_switchEthereumChain") {
-        throw new Error("GenLayer EVM switch failed");
+        throw new Error("GenLayer Studionet switch failed");
       }
       return undefined;
     });
@@ -423,7 +423,7 @@ describe("TraceSettle route map", () => {
 
     expect(screen.queryByRole("dialog", { name: "Connect wallet" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "0xC495...8272" })).not.toBeInTheDocument();
-    expect(await screen.findByText("GenLayer EVM switch failed")).toHaveAttribute(
+    expect(await screen.findByText("GenLayer Studionet switch failed")).toHaveAttribute(
       "aria-live",
       "polite"
     );

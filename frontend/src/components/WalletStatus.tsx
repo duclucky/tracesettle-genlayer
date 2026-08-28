@@ -112,7 +112,7 @@ export function WalletStatus() {
     try {
       const result = await connectInjectedWallet(candidate.provider);
       if (result.address) {
-        setStatusMessage("Switching to GenLayer EVM");
+        setStatusMessage("Switching to GenLayer Studionet");
         await ensureGenLayerEvmNetwork(candidate.provider, runtime.evmRpcUrl);
         setDisconnectSuppressed(false);
         writeDisconnectSuppression(false);
@@ -158,7 +158,7 @@ export function WalletStatus() {
             <div className="account-menu">
               <span className="mono">{shortenAddress(address)}</span>
               <span>{label ? `${label} selected` : "Wallet selected"}</span>
-              <span>GenLayer EVM ready for writes</span>
+              <span>GenLayer Studionet ready for writes</span>
               <button className="button secondary" type="button" onClick={disconnectWallet}>
                 Disconnect wallet
               </button>

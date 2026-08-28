@@ -8,7 +8,7 @@ export interface RuntimeConfig {
 
 const addressPattern = /^0x[a-fA-F0-9]{40}$/;
 const defaultGenLayerRpcUrl = "/genlayer-rpc";
-const defaultEvmRpcUrl = "https://rpc.testnet-chain.genlayer.com";
+const defaultEvmRpcUrl = "https://studio.genlayer.com/api";
 
 export function isHexAddress(value: unknown): value is `0x${string}` {
   return typeof value === "string" && addressPattern.test(value);

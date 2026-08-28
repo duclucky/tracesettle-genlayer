@@ -36,7 +36,7 @@ export function SettingsPage() {
           <p className="mono">EVM wallet RPC: {runtime.evmRpcUrl}</p>
           <p className="muted">
             Browser reads use the same-origin GenLayer RPC proxy. Wallet transactions
-            use the GenLayer EVM chain endpoint.
+            use the GenLayer Studionet RPC through the selected EVM wallet provider.
           </p>
         </section>
       </div>

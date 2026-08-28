@@ -56,7 +56,7 @@ Accessibility requirements:
 4. User selects one wallet.
 5. App calls `eth_requestAccounts` on only that selected provider.
 6. On success, topbar shows the shortened address.
-7. Before any write, app switches or adds the GenLayer EVM chain using the configured EVM RPC URL.
+7. Before any write, app switches or adds the GenLayer Studionet chain using the configured wallet RPC URL.
 8. After finality or timeout, app refreshes canonical contract views and shows the actual transaction state.
 9. User can click the address and disconnect, which clears UI wallet state and disables future writes until reconnect.
 
@@ -76,7 +76,7 @@ Add or update frontend tests to prove:
 - Selecting one wallet calls `eth_requestAccounts` only on that selected provider.
 - The topbar address button opens an account menu.
 - Disconnect clears the visible account and returns to `Connect wallet`.
-- Write controls still switch or add the GenLayer EVM chain before transaction submission.
+- Write controls still switch or add the GenLayer Studionet chain before transaction submission.
 - Missing wallet and rejected wallet states remain honest and are not simulated.
 
 ## Acceptance

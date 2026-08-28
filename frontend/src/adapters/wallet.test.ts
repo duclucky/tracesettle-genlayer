@@ -261,10 +261,10 @@ describe("wallet adapter", () => {
     expect(requests.filter((request) => request.method === "eth_sendTransaction")).toHaveLength(2);
   });
 
-  it("switches browser wallets to the GenLayer EVM chain before writes", async () => {
+  it("switches browser wallets to the GenLayer Studionet chain before writes", async () => {
     const request = vi.fn().mockResolvedValue(undefined);
 
-    await ensureGenLayerEvmNetwork({ request }, "https://rpc.testnet-chain.genlayer.com");
+    await ensureGenLayerEvmNetwork({ request });
 
     expect(request).toHaveBeenCalledWith({
       method: "wallet_switchEthereumChain",
@@ -272,26 +272,28 @@ describe("wallet adapter", () => {
     });
   });
 
-  it("adds the GenLayer EVM chain with the configured EVM RPC when missing", async () => {
+  it("adds the GenLayer Studionet chain with the Studionet RPC by default when missing", async () => {
     const request = vi
       .fn()
       .mockRejectedValueOnce({ code: 4902, message: "unknown chain" })
       .mockResolvedValueOnce(undefined);
 
-    await ensureGenLayerEvmNetwork({ request }, "https://rpc.testnet-chain.genlayer.com");
+    await ensureGenLayerEvmNetwork({ request });
 
     expect(request).toHaveBeenNthCalledWith(2, {
       method: "wallet_addEthereumChain",
       params: [
         expect.objectContaining({
           chainId: "0xf22f",
-          rpcUrls: ["https://rpc.testnet-chain.genlayer.com"]
+          chainName: "GenLayer Studionet",
+          rpcUrls: ["https://studio.genlayer.com/api"],
+          blockExplorerUrls: ["https://explorer-studio.genlayer.com/"]
         })
       ]
     });
   });
 
-  it("adds the GenLayer EVM chain when the wallet reports an unrecognized chain by message", async () => {
+  it("keeps a configured wallet RPC override when the wallet reports an unrecognized chain by message", async () => {
     const request = vi
       .fn()
       .mockRejectedValueOnce(
@@ -301,14 +303,14 @@ describe("wallet adapter", () => {
       )
       .mockResolvedValueOnce(undefined);
 
-    await ensureGenLayerEvmNetwork({ request }, "https://rpc.testnet-chain.genlayer.com");
+    await ensureGenLayerEvmNetwork({ request }, "https://example.com/evm");
 
     expect(request).toHaveBeenNthCalledWith(2, {
       method: "wallet_addEthereumChain",
       params: [
         expect.objectContaining({
           chainId: "0xf22f",
-          rpcUrls: ["https://rpc.testnet-chain.genlayer.com"]
+          rpcUrls: ["https://example.com/evm"]
         })
       ]
     });
