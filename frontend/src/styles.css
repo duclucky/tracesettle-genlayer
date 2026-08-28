@@ -121,9 +121,16 @@ summary:focus-visible {
 .app-shell > header,
 .app-shell > main {
   position: relative;
-  z-index: 2;
   max-width: 100%;
   overflow-x: clip;
+}
+
+.app-shell > header {
+  z-index: 20;
+}
+
+.app-shell > main {
+  z-index: 2;
 }
 
 .topbar {
