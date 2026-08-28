@@ -28,7 +28,7 @@ TraceSettle is a Studionet dApp for evidence-based settlement of multi-provider 
 - Contract methods: 16 (6 view, 10 write)
 - Direct tests: 20 passed
 - Deployment/config tests: 3 passed
-- Frontend tests: 70 passed
+- Frontend tests: 71 passed
 - Network: Studionet
 - Deployed contract: `0xC125348c60768552Aa51D9E8d00a59e326958a17`
 - Deploy tx: `0x4bfd7a61a876859ea562eaa7f939bd300d054571c0e1ff0b799527cb8a627b38`

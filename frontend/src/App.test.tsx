@@ -101,6 +101,22 @@ describe("TraceSettle route map", () => {
     expect(screen.getByRole("link", { name: /Open inbox/ })).toHaveAttribute("href", "/workflows");
   });
 
+  it("renders the Terranova video backdrop and liquid glass primitives", () => {
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <AppRoutes />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByTestId("terranova-video-backdrop")).toHaveAttribute(
+      "src",
+      "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260816_125506_3a597378-ec85-4ebd-bd22-03b45508ac62.mp4"
+    );
+    expect(document.getElementById("liquid-glass-refraction")).toBeInTheDocument();
+    expect(screen.getByLabelText("Live settlement signal")).toBeInTheDocument();
+    expect(screen.getByText("Canonical workflow signal")).toBeInTheDocument();
+  });
+
   it("uses the editorial layout on internal screens", () => {
     const inbox = render(
       <MemoryRouter initialEntries={["/workflows"]}>
