@@ -436,6 +436,11 @@ function isMissingChainError(cause: unknown): boolean {
   );
 }
 
+function isAlreadyAddedChainNotice(cause: unknown): boolean {
+  const message = cause instanceof Error ? cause.message : objectProperty(cause, "message");
+  return typeof message === "string" && /already (added|exists)|chain.*already/i.test(message);
+}
+
 export async function connectInjectedWallet(provider: Eip1193Provider): Promise<WalletConnection> {
   const accounts = await provider.request({ method: "eth_requestAccounts" });
   if (Array.isArray(accounts) && typeof accounts[0] === "string") {
@@ -454,6 +459,25 @@ export async function ensureGenLayerEvmNetwork(
   provider: Eip1193Provider,
   rpcUrl = "https://studio.genlayer.com/api"
 ): Promise<void> {
+  const chainParams = {
+    chainId: genLayerEvmChainId,
+    chainName: "GenLayer Studionet",
+    nativeCurrency: { name: "GEN", symbol: "GEN", decimals: 18 },
+    rpcUrls: [rpcUrl],
+    blockExplorerUrls: ["https://explorer-studio.genlayer.com/"]
+  };
+
+  try {
+    await provider.request({
+      method: "wallet_addEthereumChain",
+      params: [chainParams]
+    });
+  } catch (cause) {
+    if (!isAlreadyAddedChainNotice(cause)) {
+      throw cause;
+    }
+  }
+
   try {
     await provider.request({
       method: "wallet_switchEthereumChain",
@@ -465,15 +489,11 @@ export async function ensureGenLayerEvmNetwork(
     }
     await provider.request({
       method: "wallet_addEthereumChain",
-      params: [
-        {
-          chainId: genLayerEvmChainId,
-          chainName: "GenLayer Studionet",
-          nativeCurrency: { name: "GEN", symbol: "GEN", decimals: 18 },
-          rpcUrls: [rpcUrl],
-          blockExplorerUrls: ["https://explorer-studio.genlayer.com/"]
-        }
-      ]
+      params: [chainParams]
+    });
+    await provider.request({
+      method: "wallet_switchEthereumChain",
+      params: [{ chainId: genLayerEvmChainId }]
     });
   }
 }

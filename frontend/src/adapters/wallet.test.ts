@@ -349,26 +349,37 @@ describe("wallet adapter", () => {
     expect(requests.filter((request) => request.method === "eth_sendTransaction")).toHaveLength(2);
   });
 
-  it("switches browser wallets to the GenLayer Studionet chain before writes", async () => {
+  it("updates the GenLayer Studionet RPC metadata before switching wallets for writes", async () => {
     const request = vi.fn().mockResolvedValue(undefined);
 
     await ensureGenLayerEvmNetwork({ request });
 
-    expect(request).toHaveBeenCalledWith({
+    expect(request).toHaveBeenNthCalledWith(1, {
+      method: "wallet_addEthereumChain",
+      params: [
+        expect.objectContaining({
+          chainId: "0xf22f",
+          rpcUrls: ["https://studio.genlayer.com/api"]
+        })
+      ]
+    });
+    expect(request).toHaveBeenNthCalledWith(2, {
       method: "wallet_switchEthereumChain",
       params: [{ chainId: "0xf22f" }]
     });
   });
 
-  it("adds the GenLayer Studionet chain with the Studionet RPC by default when missing", async () => {
+  it("adds the GenLayer Studionet chain with the Studionet RPC when switch still reports it missing", async () => {
     const request = vi
       .fn()
+      .mockResolvedValueOnce(undefined)
       .mockRejectedValueOnce({ code: 4902, message: "unknown chain" })
+      .mockResolvedValueOnce(undefined)
       .mockResolvedValueOnce(undefined);
 
     await ensureGenLayerEvmNetwork({ request });
 
-    expect(request).toHaveBeenNthCalledWith(2, {
+    expect(request).toHaveBeenNthCalledWith(3, {
       method: "wallet_addEthereumChain",
       params: [
         expect.objectContaining({
@@ -381,19 +392,14 @@ describe("wallet adapter", () => {
     });
   });
 
-  it("keeps a configured wallet RPC override when the wallet reports an unrecognized chain by message", async () => {
+  it("keeps a configured wallet RPC override when updating wallet metadata", async () => {
     const request = vi
       .fn()
-      .mockRejectedValueOnce(
-        new Error(
-          'Unrecognized chain ID "0xf22f". Try adding the chain using wallet_switchEthereumChain first.'
-        )
-      )
       .mockResolvedValueOnce(undefined);
 
     await ensureGenLayerEvmNetwork({ request }, "https://example.com/evm");
 
-    expect(request).toHaveBeenNthCalledWith(2, {
+    expect(request).toHaveBeenNthCalledWith(1, {
       method: "wallet_addEthereumChain",
       params: [
         expect.objectContaining({

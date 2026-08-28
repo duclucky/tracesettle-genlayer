@@ -149,6 +149,6 @@
   "provider_credit_before_withdraw_gen": "4 GEN",
   "provider_credit_after_withdraw_gen": "0 GEN",
   "lifecycle_result": "SUCCESS",
-  "captured_at": "2026-08-22T06:42:38.194Z",
+  "captured_at": "2026-08-28T22:28:24.275Z",
   "evidence_limit": "allowlisted lifecycle fields only; full receipts intentionally not stored"
 }
