@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -44,16 +44,48 @@ describe("TraceSettle route map", () => {
     ).toBeInTheDocument();
   });
 
-  it("keeps persistent navigation visible on task routes", () => {
+  it("keeps navigation accessible from task routes", async () => {
+    const user = userEvent.setup();
     render(
       <MemoryRouter initialEntries={["/workflows/trace-1001"]}>
         <AppRoutes />
       </MemoryRouter>
     );
 
-    expect(screen.getByRole("navigation", { name: "Primary" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Menu" }));
+    const navigation = screen.getByRole("dialog", { name: "Primary navigation" });
+    expect(within(navigation).getByRole("link", { name: "Workflows" })).toBeInTheDocument();
+    expect(within(navigation).getByRole("link", { name: "Credits" })).toBeInTheDocument();
+  });
+
+  it("opens the Terranova navigation drawer and preserves route links", async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <AppRoutes />
+      </MemoryRouter>
+    );
+
+    await user.click(screen.getByRole("button", { name: "Menu" }));
+    expect(screen.getByRole("dialog", { name: "Primary navigation" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Workflows" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Credits" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Close menu" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Close menu" }));
+    expect(screen.queryByRole("dialog", { name: "Primary navigation" })).not.toBeInTheDocument();
+  });
+
+  it("closes the navigation drawer with Escape", async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <AppRoutes />
+      </MemoryRouter>
+    );
+
+    await user.click(screen.getByRole("button", { name: "Menu" }));
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog", { name: "Primary navigation" })).not.toBeInTheDocument();
   });
 
   it("marks the application shell with the Terranova visual system", () => {
