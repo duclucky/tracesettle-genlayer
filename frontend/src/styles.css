@@ -1,21 +1,42 @@
 :root {
   color-scheme: light;
-  --color-canvas: #f8fafc;
-  --color-surface: #ffffff;
-  --color-surface-muted: #eef3f7;
-  --color-text: #111827;
-  --color-text-muted: #526071;
-  --color-border: #dde5ee;
-  --color-accent: #0369a1;
-  --color-accent-strong: #075985;
-  --color-success: #166534;
-  --color-warning: #92400e;
-  --color-danger: #b91c1c;
-  --color-retry: #6d5d00;
+  --canvas: #f4f1ea;
+  --canvas-deep: #e8e5dc;
+  --surface: rgb(255 255 255 / 0.72);
+  --surface-strong: rgb(255 255 255 / 0.9);
+  --ink: #0e1110;
+  --muted: #56605b;
+  --line: rgb(14 17 16 / 0.16);
+  --line-strong: rgb(14 17 16 / 0.3);
+  --moss: #315f4b;
+  --moss-soft: #dcebe2;
+  --amber: #8b5e13;
+  --amber-soft: #f5e8c5;
+  --coral: #a63e3e;
+  --coral-soft: #f4d9d7;
+  --focus: #176b73;
+  --shadow-soft: 0 18px 60px rgb(14 17 16 / 0.08);
+  --radius-card: 28px;
+  --radius-control: 12px;
+  --motion-fast: 180ms;
+  --motion-standard: 260ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface-strong);
+  --color-surface-muted: var(--canvas-deep);
+  --color-text: var(--ink);
+  --color-text-muted: var(--muted);
+  --color-border: var(--line);
+  --color-accent: var(--moss);
+  --color-accent-strong: #244637;
+  --color-success: var(--moss);
+  --color-warning: var(--amber);
+  --color-danger: var(--coral);
+  --color-retry: var(--amber);
   font-family:
-    "Geist Sans", "Aptos", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  background: var(--color-canvas);
-  color: var(--color-text);
+    Inter, "Helvetica Neue", Arial, sans-serif;
+  background: var(--canvas);
+  color: var(--ink);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 }
@@ -28,7 +49,10 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100dvh;
-  background: var(--color-canvas);
+  background:
+    radial-gradient(circle at 82% 12%, rgb(184 226 215 / 0.36), transparent 32rem),
+    radial-gradient(circle at 12% 78%, rgb(221 204 170 / 0.28), transparent 28rem),
+    var(--canvas);
 }
 
 a {
@@ -55,7 +79,7 @@ input:focus-visible,
 textarea:focus-visible,
 select:focus-visible,
 summary:focus-visible {
-  outline: 3px solid rgb(3 105 161 / 0.35);
+  outline: 3px solid rgb(23 107 115 / 0.5);
   outline-offset: 2px;
 }
 

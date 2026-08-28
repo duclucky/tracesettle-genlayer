@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -54,6 +54,16 @@ describe("TraceSettle route map", () => {
     expect(screen.getByRole("navigation", { name: "Primary" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Workflows" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Credits" })).toBeInTheDocument();
+  });
+
+  it("marks the application shell with the Terranova visual system", () => {
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <AppRoutes />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByTestId("terranova-shell")).toBeInTheDocument();
   });
 
   it("does not present the fixture wallet as a real connected account", () => {
@@ -400,6 +410,35 @@ describe("TraceSettle route map", () => {
     expect(
       screen.getByText("Connect wallet before signing. No transaction has been submitted.")
     ).toBeInTheDocument();
+  });
+
+  it("refreshes live write feedback after an authorized wallet is restored", async () => {
+    vi.stubEnv("VITE_CONTRACT_ADDRESS", "0x1234567890123456789012345678901234567890");
+    vi.stubGlobal("ethereum", {
+      request: vi.fn(async ({ method }: { method: string }) => {
+        if (method === "eth_accounts") {
+          return ["0xC495ef51618D03267A1f227aFe5b27B38c748272"];
+        }
+        return undefined;
+      })
+    });
+    render(
+      <MemoryRouter initialEntries={["/workflows/new"]}>
+        <AppRoutes />
+      </MemoryRouter>
+    );
+
+    await screen.findByRole("button", { name: "0xC495...8272" });
+
+    expect(screen.getByRole("button", { name: "Submit workflow transaction" })).toBeEnabled();
+    await waitFor(() => {
+      expect(
+        screen.getByText("No transaction has been signed from this control.")
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByText("Connect wallet before signing. No transaction has been submitted.")
+      ).not.toBeInTheDocument();
+    });
   });
 
   it("blocks live actions honestly until a contract address is configured", async () => {

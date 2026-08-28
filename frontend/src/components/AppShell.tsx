@@ -22,7 +22,7 @@ const navItems = [
 export function AppShell({ children }: { children: ReactNode }) {
   return (
     <WalletSessionProvider>
-      <div className="app-shell">
+      <div className="app-shell terranova-shell" data-testid="terranova-shell">
         <header className="topbar">
           <div className="topbar-inner">
             <NavLink className="brand" to="/" aria-label="TraceSettle home">
