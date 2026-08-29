@@ -215,14 +215,21 @@ export function createBrowserWalletProvider(provider: Eip1193Provider): Eip1193P
       }
 
       const [transaction, ...rest] = args.params;
-      let normalizedTransaction = transaction;
+      const {
+        chainId: _chainId,
+        nonce: _nonce,
+        type: _type,
+        ...walletManagedTransaction
+      } = transaction;
+      let normalizedTransaction = walletManagedTransaction;
       if (hasEip1559FeeFields(transaction)) {
         if (
           needsGasPriceNormalization(transaction.maxFeePerGas) ||
           needsGasPriceNormalization(transaction.maxPriorityFeePerGas)
         ) {
           const gasPrice = await currentGasPrice(provider);
-          const { gasPrice: _legacyGasPrice, ...transactionWithoutLegacyGasPrice } = transaction;
+          const { gasPrice: _legacyGasPrice, ...transactionWithoutLegacyGasPrice } =
+            normalizedTransaction;
           normalizedTransaction = {
             ...transactionWithoutLegacyGasPrice,
             maxFeePerGas: gasPrice,
@@ -231,7 +238,7 @@ export function createBrowserWalletProvider(provider: Eip1193Provider): Eip1193P
         }
       } else if (needsGasPriceNormalization(transaction.gasPrice)) {
         normalizedTransaction = {
-          ...transaction,
+          ...normalizedTransaction,
           gasPrice: await currentGasPrice(provider)
         };
       }

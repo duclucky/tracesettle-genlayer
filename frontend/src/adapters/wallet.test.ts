@@ -271,6 +271,53 @@ describe("wallet adapter", () => {
     ]);
   });
 
+  it("strips SDK-supplied nonce chainId and type fields before prompting browser wallets", async () => {
+    const requests: Array<{ method: string; params?: unknown[] | Record<string, unknown> }> = [];
+    const provider = {
+      request: vi.fn(async (args: { method: string; params?: unknown[] | Record<string, unknown> }) => {
+        requests.push(args);
+        if (args.method === "eth_gasPrice") {
+          return "0xb2d05e0";
+        }
+        return "0xabc";
+      })
+    };
+    const compatibleProvider = createBrowserWalletProvider(provider);
+
+    await compatibleProvider.request({
+      method: "eth_sendTransaction",
+      params: [
+        {
+          from: "0x1111111111111111111111111111111111111111",
+          to: "0x2222222222222222222222222222222222222222",
+          gas: "0x7a120",
+          gasPrice: "0x1",
+          value: "0xde0b6b3a7640000",
+          nonce: "0x199",
+          chainId: "0xf22f",
+          type: "0x0"
+        }
+      ]
+    });
+
+    expect(requests[1].params).toEqual([
+      expect.not.objectContaining({
+        nonce: expect.anything(),
+        chainId: expect.anything(),
+        type: expect.anything()
+      })
+    ]);
+    expect(requests[1].params).toEqual([
+      expect.objectContaining({
+        from: "0x1111111111111111111111111111111111111111",
+        to: "0x2222222222222222222222222222222222222222",
+        gas: "0x7a120",
+        gasPrice: "0xb2d05e0",
+        value: "0xde0b6b3a7640000"
+      })
+    ]);
+  });
+
   it("normalizes below-minimum EIP-1559 fee caps without adding legacy gas price", async () => {
     const requests: Array<{ method: string; params?: unknown[] | Record<string, unknown> }> = [];
     const provider = {
